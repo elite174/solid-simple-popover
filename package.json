@@ -1,0 +1,22 @@
+{
+  "name": "solid-simple-popover",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@floating-ui/dom": "^1.5.3",
+    "solid-js": "^1.8.7",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vite-plugin-solid": "^2.8.0"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.8.7",
+    "@floating-ui/dom": "^1.5.3"
+  }
+}
