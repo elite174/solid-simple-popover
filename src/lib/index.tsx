@@ -154,14 +154,17 @@ export const Popover: ParentComponent<PopoverProps> = (props) => {
             createEffect(() => {
               const options = props.computePositionOptions;
 
-              const updatePosition = () =>
+              const updatePosition = () => {
+                // for correct placement we need to set width of content before computing position
+                // @see https://floating-ui.com/docs/computePosition
+                content.style.width = props.sameWidth ? `${trigger.clientWidth}px` : "max-content";
+
                 computePosition(trigger, content, options).then(({ x, y }) => {
                   content.style.top = `${y}px`;
                   content.style.left = `${x}px`;
                   content.style.position = options?.strategy ?? "fixed";
-
-                  if (props.sameWidth) content.style.width = `${trigger.clientWidth}px`;
                 });
+              };
 
               updatePosition();
 
