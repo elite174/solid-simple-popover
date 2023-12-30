@@ -29,6 +29,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "homepage": "https://github.com/elite174/solid-simple-popover",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elite174/solid-simple-popover"
+  },
+  "bugs": {
+    "url": "https://github.com/elite174/solid-simple-popover/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
