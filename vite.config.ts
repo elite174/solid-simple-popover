@@ -20,7 +20,7 @@ export default defineConfig({
     outDir: "dist",
     minify: false,
     rollupOptions: {
-      external: ["solid-js", "solid-js/web", "@floating-ui/dom"],
+      external: ["solid-js", "@floating-ui/dom"],
     },
   },
 });

@@ -15,7 +15,12 @@ import {
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-type BaseProps<T> = {
+export type PopoverAPI = {
+  getContentWrapperElement: () => HTMLElement | undefined;
+  getTriggerElement: () => HTMLElement | undefined;
+};
+
+export type PopoverBaseProps<T> = {
   children?: JSXElement;
   triggerContent?: JSXElement;
   open?: boolean;
@@ -28,6 +33,12 @@ type BaseProps<T> = {
   triggerStyles?: JSX.CSSProperties;
   /** @default "button" */
   triggerTag?: T;
+  /**
+   * @default "pointerdown"
+   * if set to null no event would trigger popover,
+   * so you need to trigger it mannually with imperative API
+   */
+  triggerEvent?: string | null;
   contentWrapperClass?: string;
   contentWrapperStyles?: JSX.CSSProperties;
   /** @default "div" */
@@ -35,8 +46,7 @@ type BaseProps<T> = {
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
   onOpenChange?: (open: boolean) => void;
-  getContentWrapperElement?: (element: HTMLElement) => void;
-  getTriggerElement?: (element: HTMLElement) => void;
+  getAPI?: (api: PopoverAPI) => void;
 } & (
   | {
       // autoUpdate option for floating-ui
@@ -46,7 +56,7 @@ type BaseProps<T> = {
   | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
 );
 
-export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & BaseProps<T>;
+export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
 
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
@@ -72,18 +82,30 @@ const EXCLUDED_PROPS = [
   "contentWrapperTag",
   "usePopoverAPI",
   "onOpenChange",
-  "getContentWrapperElement",
-  "getTriggerElement",
   "autoUpdate",
   "autoUpdateOptions",
   "children",
-] satisfies (keyof BaseProps<any>)[];
+  "triggerEvent",
+  "getAPI",
+] satisfies (keyof PopoverBaseProps<any>)[];
 
 export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initialProps: PopoverProps<T>) => {
   const [props, componentProps] = splitProps(initialProps, EXCLUDED_PROPS);
   const [triggerElementRef, setTriggerElementRef] = createSignal<HTMLElement>();
   const [contentElementRef, setContentElementRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(props.open ?? props.defaultOpen ?? false);
+
+  const handleTrigger = () => {
+    const newOpenValue = !open();
+    // if uncontrolled, set open state
+    if (props.open === undefined) setOpen(newOpenValue);
+    props.onOpenChange?.(newOpenValue);
+  };
+
+  const api: PopoverAPI = {
+    getContentWrapperElement: () => contentElementRef(),
+    getTriggerElement: () => triggerElementRef(),
+  };
 
   // sync state with props
   createComputed(
@@ -97,11 +119,23 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
     )
   );
 
+  // provide API on mount
   createEffect(
-    on([triggerElementRef, () => props.getTriggerElement], ([trigger, getTriggerElement]) => {
-      if (trigger) getTriggerElement?.(trigger);
-    })
+    on(
+      () => props.getAPI,
+      (getAPI) => getAPI?.(api)
+    )
   );
+
+  createEffect(() => {
+    const event = props.triggerEvent === undefined ? "pointerdown" : props.triggerEvent;
+    if (!event) return;
+
+    const trigger = getElement(triggerElementRef);
+    trigger.addEventListener(event, handleTrigger);
+
+    onCleanup(() => trigger.removeEventListener(event, handleTrigger));
+  });
 
   return (
     <>
@@ -113,12 +147,6 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
         class={props.triggerClass}
         style={props.triggerStyles}
         data-expanded={open()}
-        onPointerDown={() => {
-          const newOpenValue = !open();
-          // if uncontrolled, set open state
-          if (props.open === undefined) setOpen(newOpenValue);
-          props.onOpenChange?.(newOpenValue);
-        }}
       >
         {props.triggerContent}
       </Dynamic>
@@ -193,12 +221,6 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
               });
             });
           });
-
-          createEffect(
-            on([contentElementRef, () => props.getContentWrapperElement], ([content, getContentWrapperElement]) => {
-              if (content) getContentWrapperElement?.(content);
-            })
-          );
 
           return (
             <Dynamic
