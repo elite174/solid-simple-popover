@@ -5,7 +5,7 @@ import "./App.css";
 function App() {
   return (
     <main>
-      <Popover triggerElement={<button>click</button>}>
+      <Popover triggerContent="Toggle popover">
         <span>hi</span>
       </Popover>
     </main>
