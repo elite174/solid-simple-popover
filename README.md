@@ -170,48 +170,68 @@ import { type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui
 import { type ComponentProps, type JSXElement, type JSX } from "solid-js";
 
 export type PopoverAPI = {
-    getContentWrapperElement: () => HTMLElement | undefined;
-    getTriggerElement: () => HTMLElement | undefined;
+  getContentWrapperElement: () => HTMLElement | undefined;
+  getTriggerElement: () => HTMLElement | undefined;
 };
 
 export type PopoverBaseProps<T> = {
-    children?: JSXElement;
-    triggerContent?: JSXElement;
-    open?: boolean;
-    defaultOpen?: boolean;
-    /** Should content have the same width as trigger */
-    sameWidth?: boolean;
-    /** Options for floating-ui computePosition function */
-    computePositionOptions?: ComputePositionConfig;
-    triggerClass?: string;
-    triggerStyles?: JSX.CSSProperties;
-    /** @default "button" */
-    triggerTag?: T;
-    /**
-     * @default "pointerdown"
-     * if set to null no event would trigger popover,
-     * so you need to trigger it mannually with imperative API
-     */
-    triggerEvent?: string | null;
-    contentWrapperClass?: string;
-    contentWrapperStyles?: JSX.CSSProperties;
-    /** @default "div" */
-    contentWrapperTag?: string;
-    /** Use popover API where possible */
-    usePopoverAPI?: boolean;
-    onOpenChange?: (open: boolean) => void;
-    getAPI?: (api: PopoverAPI) => void;
-} & ({
-    autoUpdate?: false;
-    autoUpdateOptions?: never;
-} | {
-    autoUpdate: true;
-    autoUpdateOptions?: AutoUpdateOptions;
-});
+  children?: JSXElement;
+  triggerContent?: JSXElement;
+  open?: boolean;
+  defaultOpen?: boolean;
+  /** Should content have the same width as trigger */
+  sameWidth?: boolean;
+  /** Options for floating-ui computePosition function */
+  computePositionOptions?: ComputePositionConfig;
+  triggerClass?: string;
+  triggerStyles?: JSX.CSSProperties;
+  /** @default "button" */
+  triggerTag?: T;
+  /**
+   * @default "pointerdown"
+   * if set to null no event would trigger popover,
+   * so you need to trigger it mannually with imperative API
+   */
+  triggerEvent?: string | null;
+  contentWrapperClass?: string;
+  contentWrapperStyles?: JSX.CSSProperties;
+  /** @default "div" */
+  contentWrapperTag?: string;
+  onOpenChange?: (open: boolean) => void;
+  getAPI?: (api: PopoverAPI) => void;
+} & (
+  | {
+      autoUpdate?: false;
+      autoUpdateOptions?: undefined;
+    }
+  | {
+      autoUpdate: true;
+      autoUpdateOptions?: AutoUpdateOptions;
+    }
+) &
+  (
+    | {
+        mount?: undefined;
+        /** Use popover API where possible */
+        usePopoverAPI?: true;
+      }
+    | {
+        /**
+         * HTMLElement to mount popover content in
+         * Can be used only when usePopoverAPI is set to false
+         * @default document.body
+         */
+        mount?: HTMLElement;
+        /** Use popover API where possible */
+        usePopoverAPI?: false;
+      }
+  );
 
 export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
 
-export declare const Popover: <T extends keyof JSX.IntrinsicElements = "button">(initialProps: PopoverProps<T>) => JSX.Element;
+export declare const Popover: <T extends keyof JSX.IntrinsicElements = "button">(
+  initialProps: PopoverProps<T>
+) => JSX.Element;
 ```
 
 ## License
