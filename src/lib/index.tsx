@@ -43,18 +43,33 @@ export type PopoverBaseProps<T> = {
   contentWrapperStyles?: JSX.CSSProperties;
   /** @default "div" */
   contentWrapperTag?: string;
-  /** Use popover API where possible */
-  usePopoverAPI?: boolean;
   onOpenChange?: (open: boolean) => void;
   getAPI?: (api: PopoverAPI) => void;
 } & (
   | {
       // autoUpdate option for floating-ui
       autoUpdate?: false;
-      autoUpdateOptions?: never;
+      autoUpdateOptions?: undefined;
     }
   | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
-);
+) &
+  (
+    | {
+        mount?: undefined;
+        /** Use popover API where possible */
+        usePopoverAPI?: true;
+      }
+    | {
+        /**
+         * HTMLElement to mount popover content in
+         * Can be used only when usePopoverAPI is set to false
+         * @default document.body
+         */
+        mount?: HTMLElement;
+        /** Use popover API where possible */
+        usePopoverAPI?: false;
+      }
+  );
 
 export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
 
@@ -87,6 +102,7 @@ const EXCLUDED_PROPS = [
   "children",
   "triggerEvent",
   "getAPI",
+  "mount",
 ] satisfies (keyof PopoverBaseProps<any>)[];
 
 export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initialProps: PopoverProps<T>) => {
@@ -190,10 +206,13 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
               content.setAttribute("popover", "manual");
               content.setAttribute("id", `popover-${popoverId}`);
               if (!content.matches(":popover-open")) content.showPopover();
-            } else {
-              document.body.appendChild(content);
-              onCleanup(() => content.remove());
-            }
+            } else
+              createEffect(() => {
+                const elementToMount = props.mount ?? document.body;
+
+                elementToMount.appendChild(content);
+                onCleanup(() => content.remove());
+              });
 
             createEffect(() => {
               const options = props.computePositionOptions;
