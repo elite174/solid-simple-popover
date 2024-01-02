@@ -2,28 +2,30 @@ import { Popover } from "./lib";
 
 import "./App.css";
 import { flip } from "@floating-ui/dom";
-import { createEffect, createSignal } from "solid-js";
 
 function App() {
-  const [contentWrapperRef, setContentWrapperRef] = createSignal<HTMLElement>();
-
-  createEffect(() => console.log(contentWrapperRef()));
-
   return (
     <Popover
-      trigger={<button>Toggle popover</button>}
+      // Minimalistic
+      // You'll only see <button>Toggle popover</button> in DOM
+      trigger={<button id="trigger-button">Toggle popover</button>}
       content={<div>This div is visible when popover is open!</div>}
+      // ------------------------------- The following props are optional
+      // Only one DOM wrapper over content
+      contentWrapperClass="content-wrapper-class"
       // Full control over position
       autoUpdate
       computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
       // Popover API support (where possible)
       usePopoverAPI
-      // Only one DOM wrapper over content
-      contentWrapperClass="content-wrapper-class"
       // Highly customizable
       ignoreOutsideInteraction
-      setContentWrapperRef={setContentWrapperRef}
+      dataAttributeName="data-open"
+      // Astro support! Will work in Astro ignoring astro-slot wrapper
+      anchorElementSelector="trigger-button"
+      // SSR support
       mount="body"
+      
     />
   );
 }
