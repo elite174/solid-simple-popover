@@ -1,11 +1,8 @@
 import { Popover } from "./lib";
 
 import "./App.css";
-import { createSignal } from "solid-js";
 
 function App() {
-  const [open, setOpen] = createSignal(false);
-
   return (
     <main id="12" style={{ position: "relative" }}>
       <Popover

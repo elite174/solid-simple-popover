@@ -47,6 +47,11 @@ export type PopoverBaseProps<T> = {
   mount?: HTMLElement;
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
+  /**
+   * Ignore outside interaction when popover is open
+   * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
+   */
+  ignoreOutsideInteraction?: boolean;
   onOpenChange?: (open: boolean) => void;
   getAPI?: (api: PopoverAPI) => void;
 } & (
@@ -90,7 +95,14 @@ const EXCLUDED_PROPS = [
   "triggerEvent",
   "getAPI",
   "mount",
+  "ignoreOutsideInteraction",
 ] satisfies (keyof PopoverBaseProps<any>)[];
+
+const DEFAULT_PROPS = Object.freeze({
+  triggerTag: "button",
+  triggerEvent: "pointerdown",
+  contentWrapperTag: "div",
+}) satisfies Partial<PopoverBaseProps<any>>;
 
 export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initialProps: PopoverProps<T>) => {
   const [props, componentProps] = splitProps(initialProps, EXCLUDED_PROPS);
@@ -131,7 +143,7 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
   );
 
   createEffect(() => {
-    const event = props.triggerEvent === undefined ? "pointerdown" : props.triggerEvent;
+    const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
     if (!event) return;
 
     const trigger = getElement(triggerElementRef);
@@ -145,7 +157,7 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
       {/** @ts-ignore Weak ts types */}
       <Dynamic
         {...componentProps}
-        component={props.triggerTag ?? "button"}
+        component={props.triggerTag ?? DEFAULT_PROPS.triggerTag}
         ref={setTriggerElementRef}
         class={props.triggerClass}
         style={props.triggerStyles}
@@ -155,56 +167,49 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
       </Dynamic>
       <Show when={open()}>
         {(_) => {
-          const popoverId = createUniqueId();
           const shouldUsePopoverAPI = () => props.usePopoverAPI && checkPopoverSupport();
-
-          createEffect(() => {
-            if (shouldUsePopoverAPI()) {
-              getElement(triggerElementRef).setAttribute("popovertarget", popoverId);
-
-              onCleanup(() => getElement(triggerElementRef).removeAttribute("popovertarget"));
-            }
-          });
-
-          createEffect(() => {
-            const trigger = getElement(triggerElementRef);
-            const content = getElement(contentElementRef);
-
-            // Handle click outside correctly
-            const handleClickOutside = (e: MouseEvent) => {
-              const eventPath = e.composedPath();
-
-              if (eventPath.includes(trigger) || eventPath.includes(content)) return;
-
-              // if uncontrolled, close popover
-              if (props.open === undefined) setOpen(false);
-              props.onOpenChange?.(false);
-            };
-
-            document.addEventListener("pointerdown", handleClickOutside);
-            onCleanup(() => document.removeEventListener("pointerdown", handleClickOutside));
-          });
 
           createEffect(() => {
             const trigger = getElement(triggerElementRef);
             const content = getElement(contentElementRef);
 
             createEffect(() => {
-              const elementToMount = props.mount;
+              if (props.ignoreOutsideInteraction) return;
 
-              if (!(elementToMount instanceof HTMLElement)) return;
+              // Handle click outside correctly
+              const handleClickOutside = (e: MouseEvent) => {
+                const eventPath = e.composedPath();
 
-              elementToMount.appendChild(content);
+                if (eventPath.includes(trigger) || eventPath.includes(content)) return;
+
+                // if uncontrolled, close popover
+                if (props.open === undefined) setOpen(false);
+                props.onOpenChange?.(false);
+              };
+
+              document.addEventListener("pointerdown", handleClickOutside);
+              onCleanup(() => document.removeEventListener("pointerdown", handleClickOutside));
+            });
+
+            createEffect(() => {
+              if (!props.mount) return;
+
+              props.mount.appendChild(content);
               onCleanup(() => content.remove());
             });
 
             createEffect(() => {
               if (!shouldUsePopoverAPI()) return;
 
+              const popoverId = createUniqueId();
+
+              trigger.setAttribute("popovertarget", popoverId);
               content.setAttribute("popover", "manual");
               content.setAttribute("id", `popover-${popoverId}`);
 
               if (!content.matches(":popover-open")) content.showPopover();
+
+              onCleanup(() => trigger.removeAttribute("popovertarget"));
             });
 
             createEffect(() => {
@@ -236,7 +241,7 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
 
           return (
             <Dynamic
-              component={props.contentWrapperTag ?? "div"}
+              component={props.contentWrapperTag ?? DEFAULT_PROPS.contentWrapperTag}
               class={props.contentWrapperClass}
               style={props.contentWrapperStyles}
               ref={setContentElementRef}

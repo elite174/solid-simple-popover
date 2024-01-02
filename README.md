@@ -73,7 +73,7 @@ Don't forget to reset default browser styles for `[popover]`:
 
 ### Full control over position
 
-You can pass all the options for positioning. See docs for computePosition.
+You can pass all the options for positioning. See docs for [computePosition](https://floating-ui.com/docs/computePosition).
 
 ```tsx
 import { Popover } from "solid-simple-popover";
@@ -174,7 +174,7 @@ export type PopoverAPI = {
   getTriggerElement: () => HTMLElement | undefined;
 };
 
-export type PopoverBaseProps<T> = {
+export type PopoverBaseProps = {
   children?: JSXElement;
   triggerContent?: JSXElement;
   open?: boolean;
@@ -186,7 +186,7 @@ export type PopoverBaseProps<T> = {
   triggerClass?: string;
   triggerStyles?: JSX.CSSProperties;
   /** @default "button" */
-  triggerTag?: T;
+  triggerTag?: string;
   /**
    * @default "pointerdown"
    * if set to null no event would trigger popover,
@@ -197,6 +197,10 @@ export type PopoverBaseProps<T> = {
   contentWrapperStyles?: JSX.CSSProperties;
   /** @default "div" */
   contentWrapperTag?: string;
+  /** HTMLElement to mount popover content into */
+  mount?: HTMLElement;
+  /** Use popover API where possible */
+  usePopoverAPI?: boolean;
   onOpenChange?: (open: boolean) => void;
   getAPI?: (api: PopoverAPI) => void;
 } & (
@@ -208,24 +212,7 @@ export type PopoverBaseProps<T> = {
       autoUpdate: true;
       autoUpdateOptions?: AutoUpdateOptions;
     }
-) &
-  (
-    | {
-        mount?: undefined;
-        /** Use popover API where possible */
-        usePopoverAPI?: true;
-      }
-    | {
-        /**
-         * HTMLElement to mount popover content in
-         * Can be used only when usePopoverAPI is set to false
-         * @default document.body
-         */
-        mount?: HTMLElement;
-        /** Use popover API where possible */
-        usePopoverAPI?: false;
-      }
-  );
+);
 
 export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
 
