@@ -174,7 +174,7 @@ export type PopoverAPI = {
   getTriggerElement: () => HTMLElement | undefined;
 };
 
-export type PopoverBaseProps = {
+export type PopoverBaseProps<T> = {
   children?: JSXElement;
   triggerContent?: JSXElement;
   open?: boolean;
@@ -186,7 +186,7 @@ export type PopoverBaseProps = {
   triggerClass?: string;
   triggerStyles?: JSX.CSSProperties;
   /** @default "button" */
-  triggerTag?: string;
+  triggerTag?: T;
   /**
    * @default "pointerdown"
    * if set to null no event would trigger popover,
@@ -201,6 +201,11 @@ export type PopoverBaseProps = {
   mount?: HTMLElement;
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
+  /**
+   * Ignore outside interaction when popover is open
+   * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
+   */
+  ignoreOutsideInteraction?: boolean;
   onOpenChange?: (open: boolean) => void;
   getAPI?: (api: PopoverAPI) => void;
 } & (
