@@ -5,6 +5,19 @@
 
 A really simple and minimalistic popover component for your apps.
 
+## Installation
+
+This package has the following peer dependencies:
+
+```json
+"@floating-ui/dom": "^1.5",
+"solid-js": "^1.8"
+```
+
+so you need to install required packages by yourself.
+
+`pnpm i solid-js @floating-ui/dom solid-simple-popover`
+
 ## Features
 
 - Minimalistic - only one wrapper element for the content!
