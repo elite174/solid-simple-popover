@@ -16,7 +16,7 @@ A really simple and minimalistic popover component for your apps.
 
 ### Uses only one DOM element to wrap your content
 
-When you render the following code, only `button` (`<button>Toggle popover!</button>`) will appear in the DOM! No extra DOM nodes.
+When you render the following code, only `button` (`<button data-expanded="false">Toggle popover!</button>`) will appear in the DOM! No extra DOM nodes. Trigger node will have `data-expanded` attribute, so you can use it in your CSS styles.
 
 ```tsx
 <Popover triggerContent="Toggle popover!">
