@@ -36,8 +36,10 @@ export type PopoverProps = {
   contentWrapperStyles?: JSX.CSSProperties;
   /** @default "div" */
   contentWrapperTag?: string;
-  /** HTMLElement to mount popover content into */
-  mount?: HTMLElement;
+  /**
+   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+   */
+  mount?: HTMLElement | string;
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
   /**
@@ -50,6 +52,12 @@ export type PopoverProps = {
    * @default "data-popover-open"
    */
   dataAttributeName?: string;
+  /**
+   * CSS selector to find anchor html element inside trigger
+   * Can be used with Astro, because astro wraps trigger element into astro-slot
+   * and position breaks
+   */
+  anchorElementSelector?: string;
   onOpenChange?: (open: boolean) => void;
   setContentWrapperRef?: (wrapperElement: HTMLElement) => void;
 } & (
@@ -64,9 +72,16 @@ export type PopoverProps = {
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
 
-const getTriggerElement = (resolvedTrigger: ChildrenReturn): HTMLElement => {
-  const trigger = resolvedTrigger();
+const getTriggerElement = (resolvedTrigger: ChildrenReturn, anchorElementSelector?: string): HTMLElement => {
+  let trigger = resolvedTrigger();
   if (!(trigger instanceof HTMLElement)) throw new Error("Trigger must be an HTML element");
+
+  if (anchorElementSelector) {
+    trigger = trigger.querySelector(anchorElementSelector);
+
+    if (!(trigger instanceof HTMLElement))
+      throw new Error(`Unable to find anchor element with selector "${anchorElementSelector}"`);
+  }
 
   return trigger;
 };
@@ -120,7 +135,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
     const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
     if (!event) return;
 
-    const trigger = getTriggerElement(resolvedTrigger);
+    const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
     trigger.addEventListener(event, handleTrigger);
 
     onCleanup(() => trigger.removeEventListener(event, handleTrigger));
@@ -128,7 +143,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
   createEffect(() => {
     const dataAttributeName = props.dataAttributeName ?? DEFAULT_PROPS.dataAttributeName;
-    const trigger = getTriggerElement(resolvedTrigger);
+    const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
 
     createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
 
@@ -137,13 +152,13 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
   return (
     <>
-      {resolvedTrigger()}
+      {resolvedTrigger}
       <Show when={open()}>
         {(_) => {
           const shouldUsePopoverAPI = () => props.usePopoverAPI && checkPopoverSupport();
 
           createEffect(() => {
-            const trigger = getTriggerElement(resolvedTrigger);
+            const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
             const content = getElement(contentElementRef);
 
             createEffect(() => {
@@ -165,9 +180,21 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
             });
 
             createEffect(() => {
-              if (!props.mount) return;
+              const mount = props.mount;
+              if (!mount) return;
 
-              props.mount.appendChild(content);
+              let mountElement: HTMLElement;
+
+              if (typeof mount === "string") {
+                const element = document.querySelector(mount);
+
+                if (!element || !(element instanceof HTMLElement))
+                  throw new Error(`Unable to find mount element with selector "${mount}"`);
+
+                mountElement = element;
+              } else mountElement = mount;
+
+              mountElement.appendChild(content);
               onCleanup(() => content.remove());
             });
 

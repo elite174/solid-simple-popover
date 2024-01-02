@@ -23,6 +23,7 @@ function App() {
       // Highly customizable
       ignoreOutsideInteraction
       setContentWrapperRef={setContentWrapperRef}
+      mount="body"
     />
   );
 }
