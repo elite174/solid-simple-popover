@@ -1,8 +1,6 @@
 import { autoUpdate, computePosition, type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
 import {
-  type Accessor,
   type JSXElement,
-  type JSX,
   type ChildrenReturn,
   type VoidComponent,
   Show,
@@ -14,11 +12,11 @@ import {
   on,
   children,
 } from "solid-js";
-import { Dynamic } from "solid-js/web";
 
 export type PopoverProps = {
   /** HTML Element which triggers popover */
   trigger: JSXElement;
+  /** Content to show. Must be HTML element */
   content: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
@@ -32,10 +30,6 @@ export type PopoverProps = {
    * so you need to trigger it mannually
    */
   triggerEvent?: string | null;
-  contentWrapperClass?: string;
-  contentWrapperStyles?: JSX.CSSProperties;
-  /** @default "div" */
-  contentWrapperTag?: string;
   /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    */
@@ -58,8 +52,13 @@ export type PopoverProps = {
    * and position breaks
    */
   anchorElementSelector?: string;
+  /**
+   * CSS selector to find html element inside trigger
+   * Can be used with Astro, because astro wraps element into astro-slot
+   * and position breaks
+   */
+  contentElementSelector?: string;
   onOpenChange?: (open: boolean) => void;
-  setContentWrapperRef?: (wrapperElement: HTMLElement) => void;
 } & (
   | {
       // autoUpdate option for floating-ui
@@ -72,23 +71,15 @@ export type PopoverProps = {
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
 
-const getTriggerElement = (resolvedTrigger: ChildrenReturn, anchorElementSelector?: string): HTMLElement => {
-  let trigger = resolvedTrigger();
-  if (!(trigger instanceof HTMLElement)) throw new Error("Trigger must be an HTML element");
+const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): HTMLElement => {
+  let element = childrenReturn();
+  if (!(element instanceof HTMLElement)) throw new Error("trigger and content must be HTML elements");
 
-  if (anchorElementSelector) {
-    trigger = trigger.querySelector(anchorElementSelector);
+  if (elementSelector) {
+    element = element.matches(elementSelector) ? element : element.querySelector(elementSelector);
 
-    if (!(trigger instanceof HTMLElement))
-      throw new Error(`Unable to find anchor element with selector "${anchorElementSelector}"`);
+    if (!(element instanceof HTMLElement)) throw new Error(`Unable to find element with selector "${elementSelector}"`);
   }
-
-  return trigger;
-};
-
-const getElement = (elementRef: Accessor<HTMLElement | undefined>) => {
-  const element = elementRef();
-  if (!element) throw new Error("HTML element element not found");
 
   return element;
 };
@@ -96,12 +87,10 @@ const getElement = (elementRef: Accessor<HTMLElement | undefined>) => {
 const DEFAULT_PROPS = Object.freeze({
   as: "button",
   triggerEvent: "pointerdown",
-  contentWrapperTag: "div",
   dataAttributeName: "data-popover-open",
 }) satisfies Partial<PopoverProps>;
 
 export const Popover: VoidComponent<PopoverProps> = (props) => {
-  const [contentElementRef, setContentElementRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(props.open ?? props.defaultOpen ?? false);
 
   const resolvedTrigger = children(() => props.trigger);
@@ -126,16 +115,10 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
   );
 
   createEffect(() => {
-    const contentElement = contentElementRef();
-
-    if (contentElement) props.setContentWrapperRef?.(contentElement);
-  });
-
-  createEffect(() => {
     const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
     if (!event) return;
 
-    const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
+    const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
     trigger.addEventListener(event, handleTrigger);
 
     onCleanup(() => trigger.removeEventListener(event, handleTrigger));
@@ -143,7 +126,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
   createEffect(() => {
     const dataAttributeName = props.dataAttributeName ?? DEFAULT_PROPS.dataAttributeName;
-    const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
+    const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
 
     createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
 
@@ -156,10 +139,13 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
       <Show when={open()}>
         {(_) => {
           const shouldUsePopoverAPI = () => props.usePopoverAPI && checkPopoverSupport();
+          const resolvedContent = children(() => props.content);
 
           createEffect(() => {
-            const trigger = getTriggerElement(resolvedTrigger, props.anchorElementSelector);
-            const content = getElement(contentElementRef);
+            const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
+            const content = getElement(resolvedContent, props.contentElementSelector);
+            // Hack for astro
+            const contentToMount = getElement(resolvedContent);
 
             createEffect(() => {
               if (props.ignoreOutsideInteraction) return;
@@ -194,8 +180,8 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
                 mountElement = element;
               } else mountElement = mount;
 
-              mountElement.appendChild(content);
-              onCleanup(() => content.remove());
+              mountElement.appendChild(contentToMount);
+              onCleanup(() => contentToMount.remove());
             });
 
             createEffect(() => {
@@ -239,16 +225,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
             });
           });
 
-          return (
-            <Dynamic
-              component={props.contentWrapperTag ?? DEFAULT_PROPS.contentWrapperTag}
-              class={props.contentWrapperClass}
-              style={props.contentWrapperStyles}
-              ref={setContentElementRef}
-            >
-              {props.content}
-            </Dynamic>
-          );
+          return resolvedContent();
         }}
       </Show>
     </>
