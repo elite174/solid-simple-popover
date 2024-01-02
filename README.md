@@ -1,5 +1,8 @@
 # solid-simple-popover
 
+[![version](https://img.shields.io/npm/v/solid-simple-popover?style=for-the-badge)](https://www.npmjs.com/package/solid-simple-popover)
+![npm](https://img.shields.io/npm/dw/solid-simple-popover?style=for-the-badge)
+
 A really simple and minimalistic popover component for your apps.
 
 ## Features
