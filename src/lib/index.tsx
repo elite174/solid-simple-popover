@@ -22,17 +22,15 @@ export type PopoverAPI = {
 
 export type PopoverBaseProps<T> = {
   children?: JSXElement;
-  triggerContent?: JSXElement;
+  content?: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
   /** Options for floating-ui computePosition function */
   computePositionOptions?: ComputePositionConfig;
-  triggerClass?: string;
-  triggerStyles?: JSX.CSSProperties;
   /** @default "button" */
-  triggerTag?: T;
+  as?: T;
   /**
    * @default "pointerdown"
    * if set to null no event would trigger popover,
@@ -76,14 +74,12 @@ const getElement = (elementRef: Accessor<HTMLElement | undefined>) => {
 };
 
 const EXCLUDED_PROPS = [
-  "triggerContent",
+  "content",
   "open",
   "defaultOpen",
   "sameWidth",
   "computePositionOptions",
-  "triggerClass",
-  "triggerStyles",
-  "triggerTag",
+  "as",
   "contentWrapperClass",
   "contentWrapperStyles",
   "contentWrapperTag",
@@ -99,7 +95,7 @@ const EXCLUDED_PROPS = [
 ] satisfies (keyof PopoverBaseProps<any>)[];
 
 const DEFAULT_PROPS = Object.freeze({
-  triggerTag: "button",
+  as: "button",
   triggerEvent: "pointerdown",
   contentWrapperTag: "div",
 }) satisfies Partial<PopoverBaseProps<any>>;
@@ -157,13 +153,11 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
       {/** @ts-ignore Weak ts types */}
       <Dynamic
         {...componentProps}
-        component={props.triggerTag ?? DEFAULT_PROPS.triggerTag}
+        component={props.as ?? DEFAULT_PROPS.as}
         ref={setTriggerElementRef}
-        class={props.triggerClass}
-        style={props.triggerStyles}
         data-expanded={open()}
       >
-        {props.triggerContent}
+        {props.children}
       </Dynamic>
       <Show when={open()}>
         {(_) => {
@@ -246,7 +240,7 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
               style={props.contentWrapperStyles}
               ref={setContentElementRef}
             >
-              {props.children}
+              {props.content}
             </Dynamic>
           );
         }}
