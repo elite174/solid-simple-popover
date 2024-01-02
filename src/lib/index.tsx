@@ -43,6 +43,10 @@ export type PopoverBaseProps<T> = {
   contentWrapperStyles?: JSX.CSSProperties;
   /** @default "div" */
   contentWrapperTag?: string;
+  /** HTMLElement to mount popover content into */
+  mount?: HTMLElement;
+  /** Use popover API where possible */
+  usePopoverAPI?: boolean;
   onOpenChange?: (open: boolean) => void;
   getAPI?: (api: PopoverAPI) => void;
 } & (
@@ -52,24 +56,7 @@ export type PopoverBaseProps<T> = {
       autoUpdateOptions?: undefined;
     }
   | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
-) &
-  (
-    | {
-        mount?: undefined;
-        /** Use popover API where possible */
-        usePopoverAPI?: true;
-      }
-    | {
-        /**
-         * HTMLElement to mount popover content in
-         * Can be used only when usePopoverAPI is set to false
-         * @default document.body
-         */
-        mount?: HTMLElement;
-        /** Use popover API where possible */
-        usePopoverAPI?: false;
-      }
-  );
+);
 
 export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
 
@@ -202,17 +189,23 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
             const trigger = getElement(triggerElementRef);
             const content = getElement(contentElementRef);
 
-            if (shouldUsePopoverAPI()) {
+            createEffect(() => {
+              const elementToMount = props.mount;
+
+              if (!(elementToMount instanceof HTMLElement)) return;
+
+              elementToMount.appendChild(content);
+              onCleanup(() => content.remove());
+            });
+
+            createEffect(() => {
+              if (!shouldUsePopoverAPI()) return;
+
               content.setAttribute("popover", "manual");
               content.setAttribute("id", `popover-${popoverId}`);
-              if (!content.matches(":popover-open")) content.showPopover();
-            } else
-              createEffect(() => {
-                const elementToMount = props.mount ?? document.body;
 
-                elementToMount.appendChild(content);
-                onCleanup(() => content.remove());
-              });
+              if (!content.matches(":popover-open")) content.showPopover();
+            });
 
             createEffect(() => {
               const options = props.computePositionOptions;

@@ -7,19 +7,16 @@ function App() {
   const [open, setOpen] = createSignal(false);
 
   return (
-    <main>
+    <main id="12" style={{ position: "relative" }}>
       <Popover
-        open={open()}
         triggerTag="input"
         placeholder="Input some value"
-        // Don't trigger popover with pointerdown event
-        triggerEvent={null}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        autoUpdate
+        computePositionOptions={{ strategy: "absolute" }}
+        usePopoverAPI
       >
         <span>hi</span>
       </Popover>
-      <div id="12"></div>
     </main>
   );
 }
