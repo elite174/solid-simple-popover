@@ -18,6 +18,33 @@ so you need to install required packages by yourself.
 
 `pnpm i solid-js @floating-ui/dom solid-simple-popover`
 
+## Usage
+
+```tsx
+import { Popover } from "solid-simple-popover";
+import { flip } from "@floating-ui/dom";
+
+<Popover
+  // Minimalistic
+  as="button"
+  // Awesome typings
+  type="button"
+  onClick={() => console.log("button clicked")}
+  // Full control over position
+  autoUpdate
+  computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
+  // Popover API support (where possible)
+  usePopoverAPI
+  content={<div>This div is visible when popover is open!</div>}
+  // Only one DOM wrapper over content
+  contentWrapperClass="content-wrapper-class"
+  // Highly customizable
+  ignoreOutsideInteraction
+>
+  Toggle popover
+</Popover>;
+```
+
 ## Features
 
 - Minimalistic - only one wrapper element for the content!
@@ -32,9 +59,7 @@ so you need to install required packages by yourself.
 When you render the following code, only `button` (`<button data-expanded="false">Toggle popover!</button>`) will appear in the DOM! No extra DOM nodes. Trigger node will have `data-expanded` attribute, so you can use it in your CSS styles.
 
 ```tsx
-<Popover triggerContent="Toggle popover!">
-  <div>Nice content here</div>
-</Popover>
+<Popover content={<div>Nice content here</div>}>Toggle popover!</Popover>
 ```
 
 When content is visible, it's wrapped with one extra DOM node, but you can control it with the following props:
@@ -54,16 +79,12 @@ By default popover trigger element is button, however it can be anything:
 
 ```tsx
 // No TS Error!
-<Popover triggerTag="input" placeholder="Type something">
-  <span>hi</span>
-</Popover>
+<Popover as="input" placeholder="Type something" content={<span>hi</span>}></Popover>
 ```
 
 ```tsx
 // TS error is here, because button doesn't have `placeholder` attribute
-<Popover triggerTag="button" placeholder="Type something">
-  <span>hi</span>
-</Popover>
+<Popover as="button" placeholder="Type something" content={<span>hi</span>}></Popover>
 ```
 
 ### Popover API support
@@ -82,8 +103,8 @@ Don't forget to reset default browser styles for `[popover]`:
 ```
 
 ```tsx
-<Popover triggerContent="Toggle popover!" usePopoverAPI>
-  <div>Nice content here</div>
+<Popover usePopoverAPI content={<div>Nice content here</div>}>
+  Toggle popover!
 </Popover>
 ```
 
@@ -99,11 +120,11 @@ const PositionOptionsExample = () => {
   return (
     <Popover
       defaultOpen
-      triggerContent="click"
+      content={<input type="text" />}
       computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
       autoUpdate
     >
-      <input type="text" />
+      click
     </Popover>
   );
 };
@@ -142,7 +163,7 @@ function App() {
   return (
     <Popover
       open={open()}
-      triggerTag="input"
+      as="input"
       placeholder="Input some value"
       // Don't trigger popover with pointerdown event
       triggerEvent={null}
@@ -166,7 +187,7 @@ function App() {
   return (
     <Popover
       open={open()}
-      triggerTag="input"
+      as="input"
       placeholder="Input some value"
       // Don't trigger popover with pointerdown event
       triggerEvent={null}
@@ -192,17 +213,15 @@ export type PopoverAPI = {
 
 export type PopoverBaseProps<T> = {
   children?: JSXElement;
-  triggerContent?: JSXElement;
+  content?: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
   /** Options for floating-ui computePosition function */
   computePositionOptions?: ComputePositionConfig;
-  triggerClass?: string;
-  triggerStyles?: JSX.CSSProperties;
   /** @default "button" */
-  triggerTag?: T;
+  as?: T;
   /**
    * @default "pointerdown"
    * if set to null no event would trigger popover,
