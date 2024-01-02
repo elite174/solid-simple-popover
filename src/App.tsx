@@ -7,8 +7,9 @@ function App() {
   return (
     <Popover
       // Minimalistic
-      // You'll only see <button>Toggle popover</button> in DOM
+      // You'll only see <button data-open="false" id="trigger-button">Toggle popover</button> in DOM
       trigger={<button id="trigger-button">Toggle popover</button>}
+      // No wrapper nodes!
       content={<div>This div is visible when popover is open!</div>}
       // ------------------------------- The following props are optional
       // Full control over position

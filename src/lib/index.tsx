@@ -53,7 +53,7 @@ export type PopoverProps = {
    */
   anchorElementSelector?: string;
   /**
-   * CSS selector to find html element inside trigger
+   * CSS selector to find html element inside content
    * Can be used with Astro, because astro wraps element into astro-slot
    * and position breaks
    */

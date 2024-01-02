@@ -26,52 +26,42 @@ import { flip } from "@floating-ui/dom";
 
 <Popover
   // Minimalistic
-  // You'll only see <button>Toggle popover</button> in DOM
+  // You'll only see <button data-open="false" id="trigger-button">Toggle popover</button> in DOM
   trigger={<button id="trigger-button">Toggle popover</button>}
+  // No wrapper nodes!
   content={<div>This div is visible when popover is open!</div>}
   // ------------------------------- The following props are optional
-  // Only one DOM wrapper over content
-  contentWrapperClass="content-wrapper-class"
   // Full control over position
   autoUpdate
   computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
   // Popover API support (where possible)
   usePopoverAPI
   // Highly customizable
+  sameWidth
   ignoreOutsideInteraction
   dataAttributeName="data-open"
-  // Astro support! Will work in Astro ignoring astro-slot wrapper
-  anchorElementSelector="trigger-button"
   // SSR support
   mount="body"
+  // Astro support
+  anchorElementSelector="#trigger-button"
+  contentElementSelector="div"
 />;
 ```
 
 ## Features
 
-- Minimalistic - only one wrapper element for the content!
+- Minimalistic - no wrapper DOM nodes!
 - Popover API support (with fallback)
 - Full control over position
 - Works with SSR and Astro
 
-### Uses only one DOM element to wrap your content
+### No wrapper nodes
 
 When you render the following code, only `button` (`<button data-popover-open="false">Toggle popover!</button>`) will appear in the DOM! No extra DOM nodes. Trigger node will have `data-popover-open` attribute, so you can use it in your CSS styles.
 
 ```tsx
 <Popover trigger={<button>Toggle popover!</button>} content={<div>Nice content here</div>} />
 ```
-
-When content is visible, it's wrapped with one extra DOM node, but you can control it with the following props:
-
-```tsx
-contentWrapperClass?: string;
-contentWrapperStyles?: JSX.CSSProperties;
-/** @default "div" */
-contentWrapperTag?: string;
-```
-
-Also you may use imperative API to get the wrapper element.
 
 ### Popover API support
 
@@ -104,7 +94,11 @@ const PositionOptionsExample = () => {
   return (
     <Popover
       trigger={<button>Toggle popover</button>}
-      content={<input type="text" />}
+      content={
+        <div>
+          <input type="text" />
+        </div>
+      }
       defaultOpen
       computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
       autoUpdate
@@ -118,12 +112,7 @@ const PositionOptionsExample = () => {
 ```tsx
 // Astro example
 
-<Popover
-  client:idle
-  anchorElementSelector="#trigger"
-  mount="body"
-  computePositionOptions={{ placement: "bottom-start" }}
->
+<Popover client:idle anchorElementSelector="#trigger" contentElementSelector="div" mount="body">
   <button id="trigger" slot="trigger">
     Toggle popover
   </button>
@@ -135,11 +124,12 @@ const PositionOptionsExample = () => {
 
 ```ts
 import { type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
-import { type JSXElement, type JSX, type VoidComponent } from "solid-js";
+import { type JSXElement, type VoidComponent } from "solid-js";
 
 export type PopoverProps = {
   /** HTML Element which triggers popover */
   trigger: JSXElement;
+  /** Content to show. Must be HTML element */
   content: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
@@ -153,10 +143,6 @@ export type PopoverProps = {
    * so you need to trigger it mannually
    */
   triggerEvent?: string | null;
-  contentWrapperClass?: string;
-  contentWrapperStyles?: JSX.CSSProperties;
-  /** @default "div" */
-  contentWrapperTag?: string;
   /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    */
@@ -179,8 +165,13 @@ export type PopoverProps = {
    * and position breaks
    */
   anchorElementSelector?: string;
+  /**
+   * CSS selector to find html element inside content
+   * Can be used with Astro, because astro wraps element into astro-slot
+   * and position breaks
+   */
+  contentElementSelector?: string;
   onOpenChange?: (open: boolean) => void;
-  setContentWrapperRef?: (wrapperElement: HTMLElement) => void;
 } & (
   | {
       autoUpdate?: false;
