@@ -1,9 +1,10 @@
 import { autoUpdate, computePosition, type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
 import {
   type Accessor,
-  type ComponentProps,
   type JSXElement,
   type JSX,
+  type ChildrenReturn,
+  type VoidComponent,
   Show,
   createEffect,
   createSignal,
@@ -11,30 +12,24 @@ import {
   createUniqueId,
   createComputed,
   on,
-  splitProps,
+  children,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-export type PopoverAPI = {
-  getContentWrapperElement: () => HTMLElement | undefined;
-  getTriggerElement: () => HTMLElement | undefined;
-};
-
-export type PopoverBaseProps<T> = {
-  children?: JSXElement;
-  content?: JSXElement;
+export type PopoverProps = {
+  /** HTML Element which triggers popover */
+  trigger: JSXElement;
+  content: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
   /** Options for floating-ui computePosition function */
   computePositionOptions?: ComputePositionConfig;
-  /** @default "button" */
-  as?: T;
   /**
    * @default "pointerdown"
    * if set to null no event would trigger popover,
-   * so you need to trigger it mannually with imperative API
+   * so you need to trigger it mannually
    */
   triggerEvent?: string | null;
   contentWrapperClass?: string;
@@ -50,8 +45,13 @@ export type PopoverBaseProps<T> = {
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
    */
   ignoreOutsideInteraction?: boolean;
+  /**
+   * Data attribute name to set on trigger element
+   * @default "data-popover-open"
+   */
+  dataAttributeName?: string;
   onOpenChange?: (open: boolean) => void;
-  getAPI?: (api: PopoverAPI) => void;
+  setContentWrapperRef?: (wrapperElement: HTMLElement) => void;
 } & (
   | {
       // autoUpdate option for floating-ui
@@ -61,10 +61,15 @@ export type PopoverBaseProps<T> = {
   | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
 );
 
-export type PopoverProps<T extends keyof JSX.IntrinsicElements> = ComponentProps<T> & PopoverBaseProps<T>;
-
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
+
+const getTriggerElement = (resolvedTrigger: ChildrenReturn): HTMLElement => {
+  const trigger = resolvedTrigger();
+  if (!(trigger instanceof HTMLElement)) throw new Error("Trigger must be an HTML element");
+
+  return trigger;
+};
 
 const getElement = (elementRef: Accessor<HTMLElement | undefined>) => {
   const element = elementRef();
@@ -73,49 +78,24 @@ const getElement = (elementRef: Accessor<HTMLElement | undefined>) => {
   return element;
 };
 
-const EXCLUDED_PROPS = [
-  "content",
-  "open",
-  "defaultOpen",
-  "sameWidth",
-  "computePositionOptions",
-  "as",
-  "contentWrapperClass",
-  "contentWrapperStyles",
-  "contentWrapperTag",
-  "usePopoverAPI",
-  "onOpenChange",
-  "autoUpdate",
-  "autoUpdateOptions",
-  "children",
-  "triggerEvent",
-  "getAPI",
-  "mount",
-  "ignoreOutsideInteraction",
-] satisfies (keyof PopoverBaseProps<any>)[];
-
 const DEFAULT_PROPS = Object.freeze({
   as: "button",
   triggerEvent: "pointerdown",
   contentWrapperTag: "div",
-}) satisfies Partial<PopoverBaseProps<any>>;
+  dataAttributeName: "data-popover-open",
+}) satisfies Partial<PopoverProps>;
 
-export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initialProps: PopoverProps<T>) => {
-  const [props, componentProps] = splitProps(initialProps, EXCLUDED_PROPS);
-  const [triggerElementRef, setTriggerElementRef] = createSignal<HTMLElement>();
+export const Popover: VoidComponent<PopoverProps> = (props) => {
   const [contentElementRef, setContentElementRef] = createSignal<HTMLElement>();
   const [open, setOpen] = createSignal(props.open ?? props.defaultOpen ?? false);
+
+  const resolvedTrigger = children(() => props.trigger);
 
   const handleTrigger = () => {
     const newOpenValue = !open();
     // if uncontrolled, set open state
     if (props.open === undefined) setOpen(newOpenValue);
     props.onOpenChange?.(newOpenValue);
-  };
-
-  const api: PopoverAPI = {
-    getContentWrapperElement: () => contentElementRef(),
-    getTriggerElement: () => triggerElementRef(),
   };
 
   // sync state with props
@@ -130,41 +110,40 @@ export const Popover = <T extends keyof JSX.IntrinsicElements = "button">(initia
     )
   );
 
-  // provide API on mount
-  createEffect(
-    on(
-      () => props.getAPI,
-      (getAPI) => getAPI?.(api)
-    )
-  );
+  createEffect(() => {
+    const contentElement = contentElementRef();
+
+    if (contentElement) props.setContentWrapperRef?.(contentElement);
+  });
 
   createEffect(() => {
     const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
     if (!event) return;
 
-    const trigger = getElement(triggerElementRef);
+    const trigger = getTriggerElement(resolvedTrigger);
     trigger.addEventListener(event, handleTrigger);
 
     onCleanup(() => trigger.removeEventListener(event, handleTrigger));
   });
 
+  createEffect(() => {
+    const dataAttributeName = props.dataAttributeName ?? DEFAULT_PROPS.dataAttributeName;
+    const trigger = getTriggerElement(resolvedTrigger);
+
+    createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
+
+    onCleanup(() => trigger.removeAttribute(dataAttributeName));
+  });
+
   return (
     <>
-      {/** @ts-ignore Weak ts types */}
-      <Dynamic
-        {...componentProps}
-        component={props.as ?? DEFAULT_PROPS.as}
-        ref={setTriggerElementRef}
-        data-expanded={open()}
-      >
-        {props.children}
-      </Dynamic>
+      {resolvedTrigger()}
       <Show when={open()}>
         {(_) => {
           const shouldUsePopoverAPI = () => props.usePopoverAPI && checkPopoverSupport();
 
           createEffect(() => {
-            const trigger = getElement(triggerElementRef);
+            const trigger = getTriggerElement(resolvedTrigger);
             const content = getElement(contentElementRef);
 
             createEffect(() => {
