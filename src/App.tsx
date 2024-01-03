@@ -17,12 +17,14 @@ function App() {
       computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
       // Popover API support (where possible)
       usePopoverAPI
+      // When popover API is not supported, fallback to mounting content to body
+      popoverAPIMountFallback="body"
       // Highly customizable
       sameWidth
       ignoreOutsideInteraction
       dataAttributeName="data-open"
       // SSR support
-      mount="body"
+      //mount="body"
       // Astro support
       anchorElementSelector="#trigger-button"
       contentElementSelector="div"

@@ -37,6 +37,11 @@ export type PopoverProps = {
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
   /**
+   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+   * Fallback for browsers that don't support Popover API
+   */
+  popoverAPIMountFallback?: HTMLElement | string;
+  /**
    * Ignore outside interaction when popover is open
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
    */
@@ -80,6 +85,16 @@ const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): H
 
     if (!(element instanceof HTMLElement)) throw new Error(`Unable to find element with selector "${elementSelector}"`);
   }
+
+  return element;
+};
+
+const getMountElement = (mountTarget: HTMLElement | string): HTMLElement => {
+  if (mountTarget instanceof HTMLElement) return mountTarget;
+
+  const element = document.querySelector(mountTarget);
+  if (!element || !(element instanceof HTMLElement))
+    throw new Error(`Unable to find mount element with selector "${mountTarget}"`);
 
   return element;
 };
@@ -138,7 +153,6 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
       {resolvedTrigger}
       <Show when={open()}>
         {(_) => {
-          const shouldUsePopoverAPI = () => props.usePopoverAPI && checkPopoverSupport();
           const resolvedContent = children(() => props.content);
 
           createEffect(() => {
@@ -169,33 +183,36 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
               const mount = props.mount;
               if (!mount) return;
 
-              let mountElement: HTMLElement;
-
-              if (typeof mount === "string") {
-                const element = document.querySelector(mount);
-
-                if (!element || !(element instanceof HTMLElement))
-                  throw new Error(`Unable to find mount element with selector "${mount}"`);
-
-                mountElement = element;
-              } else mountElement = mount;
+              const mountElement = getMountElement(mount);
 
               mountElement.appendChild(contentToMount);
               onCleanup(() => contentToMount.remove());
             });
 
             createEffect(() => {
-              if (!shouldUsePopoverAPI()) return;
+              if (!props.usePopoverAPI) return;
 
-              const popoverId = createUniqueId();
+              const isPopoverSupported = checkPopoverSupport();
 
-              trigger.setAttribute("popovertarget", popoverId);
-              content.setAttribute("popover", "manual");
-              content.setAttribute("id", `popover-${popoverId}`);
+              if (isPopoverSupported) {
+                const popoverId = createUniqueId();
 
-              if (!content.matches(":popover-open")) content.showPopover();
+                trigger.setAttribute("popovertarget", popoverId);
+                content.setAttribute("popover", "manual");
+                content.setAttribute("id", `popover-${popoverId}`);
 
-              onCleanup(() => trigger.removeAttribute("popovertarget"));
+                if (!content.matches(":popover-open")) content.showPopover();
+
+                onCleanup(() => trigger.removeAttribute("popovertarget"));
+              } else {
+                const mount = props.popoverAPIMountFallback;
+                if (!mount) return;
+
+                const mountElement = getMountElement(mount);
+
+                mountElement.appendChild(contentToMount);
+                onCleanup(() => contentToMount.remove());
+              }
             });
 
             createEffect(() => {
