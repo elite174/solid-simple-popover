@@ -36,12 +36,13 @@ import { flip } from "@floating-ui/dom";
   computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
   // Popover API support (where possible)
   usePopoverAPI
+  // When popover API is not supported, fallback to mounting content to body
+  // SSR support
+  popoverAPIMountFallback="body"
   // Highly customizable
   sameWidth
   ignoreOutsideInteraction
   dataAttributeName="data-open"
-  // SSR support
-  mount="body"
   // Astro support
   anchorElementSelector="#trigger-button"
   contentElementSelector="div"
@@ -79,7 +80,14 @@ Don't forget to reset default browser styles for `[popover]`:
 ```
 
 ```tsx
-<Popover trigger={<button>Toggle popover!</button>} content={<div>Nice content here</div>} usePopoverAPI />
+<Popover
+  trigger={<button>Toggle popover!</button>}
+  content={<div>Nice content here</div>}
+  usePopoverAPI
+  // You may also provide an optional popover root
+  // It will be used when popover API is not supported
+  popoverAPIMountFallback={document.body}
+/>
 ```
 
 ### Full control over position
@@ -147,8 +155,6 @@ export type PopoverProps = {
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    */
   mount?: HTMLElement | string;
-  /** Use popover API where possible */
-  usePopoverAPI?: boolean;
   /**
    * Ignore outside interaction when popover is open
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
@@ -181,7 +187,27 @@ export type PopoverProps = {
       autoUpdate: true;
       autoUpdateOptions?: AutoUpdateOptions;
     }
-);
+) &
+  (
+    | {
+        /** Use popover API where possible */
+        usePopoverAPI?: false;
+        /**
+         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+         * Fallback for browsers that don't support Popover API
+         */
+        popoverAPIMountFallback?: undefined;
+      }
+    | {
+        /** Use popover API where possible */
+        usePopoverAPI: true;
+        /**
+         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+         * Fallback for browsers that don't support Popover API
+         */
+        popoverAPIMountFallback?: HTMLElement | string;
+      }
+  );
 
 export declare const Popover: VoidComponent<PopoverProps>;
 ```

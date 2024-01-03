@@ -34,13 +34,6 @@ export type PopoverProps = {
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    */
   mount?: HTMLElement | string;
-  /** Use popover API where possible */
-  usePopoverAPI?: boolean;
-  /**
-   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-   * Fallback for browsers that don't support Popover API
-   */
-  popoverAPIMountFallback?: HTMLElement | string;
   /**
    * Ignore outside interaction when popover is open
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
@@ -71,7 +64,27 @@ export type PopoverProps = {
       autoUpdateOptions?: undefined;
     }
   | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
-);
+) &
+  (
+    | {
+        /** Use popover API where possible */
+        usePopoverAPI?: false;
+        /**
+         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+         * Fallback for browsers that don't support Popover API
+         */
+        popoverAPIMountFallback?: undefined;
+      }
+    | {
+        /** Use popover API where possible */
+        usePopoverAPI: true;
+        /**
+         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+         * Fallback for browsers that don't support Popover API
+         */
+        popoverAPIMountFallback?: HTMLElement | string;
+      }
+  );
 
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
