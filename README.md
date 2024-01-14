@@ -5,8 +5,6 @@
 
 A really simple and minimalistic popover component for your apps.
 
-No deps, only 542B minified, 353B Gzipped.
-
 ## Installation
 
 This package has the following peer dependencies:
