@@ -233,8 +233,9 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
               const updatePosition = () => {
                 // for correct placement we need to set width of content before computing position
+                // You may consider adding 'width: max-content' by yourself
                 // @see https://floating-ui.com/docs/computePosition
-                content.style.width = props.sameWidth ? `${trigger.clientWidth}px` : "max-content";
+                if (props.sameWidth) content.style.width = `${trigger.clientWidth}px`;
 
                 computePosition(trigger, content, options).then(({ x, y }) => {
                   content.style.top = `${y}px`;
