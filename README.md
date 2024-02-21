@@ -49,6 +49,8 @@ import { flip } from "@floating-ui/dom";
 />;
 ```
 
+**IMPORTANT:** You may add `width: max-content` to the content element by yourself to avoid layout interference as it described [here](https://floating-ui.com/docs/computeposition#initial-layout).
+
 ## Features
 
 - Minimalistic - no wrapper DOM nodes!
