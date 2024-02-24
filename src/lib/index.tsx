@@ -56,35 +56,25 @@ export type PopoverProps = {
    * and position breaks
    */
   contentElementSelector?: string;
+  /**
+   * autoUpdate option for floating ui
+   * @see https://floating-ui.com/docs/autoupdate
+   */
+  autoUpdate?: boolean;
+  /**
+   * Applies only if autoUpdate is true
+   * @see https://floating-ui.com/docs/autoupdate#options
+   */
+  autoUpdateOptions?: AutoUpdateOptions;
+  /** Use popover API where possible */
+  usePopoverAPI?: boolean;
+  /**
+   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+   * Fallback for browsers that don't support Popover API
+   */
+  popoverAPIMountFallback?: HTMLElement | string;
   onOpenChange?: (open: boolean) => void;
-} & (
-  | {
-      // autoUpdate option for floating-ui
-      autoUpdate?: false;
-      autoUpdateOptions?: undefined;
-    }
-  | { autoUpdate: true; autoUpdateOptions?: AutoUpdateOptions }
-) &
-  (
-    | {
-        /** Use popover API where possible */
-        usePopoverAPI?: false;
-        /**
-         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-         * Fallback for browsers that don't support Popover API
-         */
-        popoverAPIMountFallback?: undefined;
-      }
-    | {
-        /** Use popover API where possible */
-        usePopoverAPI: true;
-        /**
-         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-         * Fallback for browsers that don't support Popover API
-         */
-        popoverAPIMountFallback?: HTMLElement | string;
-      }
-  );
+};
 
 // Remove this when Firefox supports Popover API
 const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
