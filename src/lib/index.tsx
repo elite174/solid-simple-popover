@@ -103,9 +103,15 @@ const getMountElement = (mountTarget: HTMLElement | string): HTMLElement => {
 };
 
 const DEFAULT_PROPS = Object.freeze({
-  as: "button",
   triggerEvent: "pointerdown",
   dataAttributeName: "data-popover-open",
+  computePositionOptions: {
+    /**
+     * Default position here is absolute, because there might be some bugs in safari with "fixed" position
+     * @see https://stackoverflow.com/questions/65764243/position-fixed-within-a-display-grid-on-safari
+     */
+    strategy: "absolute" as const,
+  },
 }) satisfies Partial<PopoverProps>;
 
 export const Popover: VoidComponent<PopoverProps> = (props) => {
@@ -230,7 +236,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
                 computePosition(trigger, content, options).then(({ x, y }) => {
                   content.style.top = `${y}px`;
                   content.style.left = `${x}px`;
-                  content.style.position = options?.strategy ?? "fixed";
+                  content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
                 });
               };
 
