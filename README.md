@@ -97,42 +97,6 @@ Don't forget to reset default browser styles for `[popover]`:
 You can pass all the options for positioning. See docs for [computePosition](https://floating-ui.com/docs/computePosition).
 
 ```tsx
-import { Popover } from "solid-simple-popover";
-import { flip } from "@floating-ui/dom";
-
-const PositionOptionsExample = () => {
-  return (
-    <Popover
-      trigger={<button>Toggle popover</button>}
-      content={
-        <div>
-          <input type="text" />
-        </div>
-      }
-      defaultOpen
-      computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
-      autoUpdate
-    />
-  );
-};
-```
-
-### Works with Astro and SSR
-
-```tsx
-// Astro example
-
-<Popover client:idle anchorElementSelector="#trigger" contentElementSelector="div" mount="body">
-  <button id="trigger" slot="trigger">
-    Toggle popover
-  </button>
-  <div slot="content">content</div>
-</Popover>
-```
-
-## Types
-
-```ts
 import { type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
 import { type JSXElement, type VoidComponent } from "solid-js";
 
@@ -179,37 +143,25 @@ export type PopoverProps = {
    * and position breaks
    */
   contentElementSelector?: string;
+  /**
+   * autoUpdate option for floating ui
+   * @see https://floating-ui.com/docs/autoupdate
+   */
+  autoUpdate?: boolean;
+  /**
+   * Applies only if autoUpdate is true
+   * @see https://floating-ui.com/docs/autoupdate#options
+   */
+  autoUpdateOptions?: AutoUpdateOptions;
+  /** Use popover API where possible */
+  usePopoverAPI?: boolean;
+  /**
+   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
+   * Fallback for browsers that don't support Popover API
+   */
+  popoverAPIMountFallback?: HTMLElement | string;
   onOpenChange?: (open: boolean) => void;
-} & (
-  | {
-      autoUpdate?: false;
-      autoUpdateOptions?: undefined;
-    }
-  | {
-      autoUpdate: true;
-      autoUpdateOptions?: AutoUpdateOptions;
-    }
-) &
-  (
-    | {
-        /** Use popover API where possible */
-        usePopoverAPI?: false;
-        /**
-         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-         * Fallback for browsers that don't support Popover API
-         */
-        popoverAPIMountFallback?: undefined;
-      }
-    | {
-        /** Use popover API where possible */
-        usePopoverAPI: true;
-        /**
-         * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-         * Fallback for browsers that don't support Popover API
-         */
-        popoverAPIMountFallback?: HTMLElement | string;
-      }
-  );
+};
 
 export declare const Popover: VoidComponent<PopoverProps>;
 ```
