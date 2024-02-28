@@ -42,6 +42,7 @@ import { flip } from "@floating-ui/dom";
   // Highly customizable
   sameWidth
   ignoreOutsideInteraction
+  ignoreEscKeyPress
   dataAttributeName="data-open"
   // Astro support
   anchorElementSelector="#trigger-button"
@@ -126,6 +127,11 @@ export type PopoverProps = {
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
    */
   ignoreOutsideInteraction?: boolean;
+  /**
+   * Ignore "Escape" key press when popover is open
+   * By default when popover is open it will listen to an "Escape" key "keydown" event
+   */
+  ignoreEscKeyPress?: boolean;
   /**
    * Data attribute name to set on trigger element
    * @default "data-popover-open"

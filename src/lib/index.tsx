@@ -40,6 +40,11 @@ export type PopoverProps = {
    */
   ignoreOutsideInteraction?: boolean;
   /**
+   * Ignore "Escape" key press when popover is open
+   * By default when popover is open it will listen to an "Escape" key "keydown" event
+   */
+  ignoreEscKeyPress?: boolean;
+  /**
    * Data attribute name to set on trigger element
    * @default "data-popover-open"
    */
@@ -187,6 +192,23 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
               document.addEventListener("pointerdown", handleClickOutside);
               onCleanup(() => document.removeEventListener("pointerdown", handleClickOutside));
             });
+
+            createEffect(() => {
+              if (props.ignoreEscKeyPress) return;
+
+              const handleEscButtonPress = (e: KeyboardEvent) => {
+                if (!(e.key === "Escape")) return;
+
+                // if uncontrolled, close popover
+                if (props.open === undefined) setOpen(false);
+                props.onOpenChange?.(false);
+              };
+
+              document.addEventListener("keydown", handleEscButtonPress);
+              onCleanup(() =>
+                document.removeEventListener("keydown", handleEscButtonPress)
+              );
+            });            
 
             createEffect(() => {
               const mount = props.mount;
