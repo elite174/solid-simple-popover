@@ -199,6 +199,11 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
               const handleEscButtonPress = (e: KeyboardEvent) => {
                 if (!(e.key === "Escape")) return;
 
+                const content = getElement(resolvedContent, props.contentElementSelector);
+
+                // if content is not in the event path, return
+                if (e.target instanceof HTMLElement && !content.contains(e.target)) return;
+
                 // if uncontrolled, close popover
                 if (props.open === undefined) setOpen(false);
                 props.onOpenChange?.(false);
