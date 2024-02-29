@@ -69,6 +69,12 @@ export type PopoverProps = {
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
   /**
+   * Close dropdown on escape key press.
+   * Uses 'keydown' event with 'Escape' key.
+   * @default true
+   */
+  closeOnEscape?: boolean;
+  /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    * Fallback for browsers that don't support Popover API
    */
@@ -105,6 +111,7 @@ const getMountElement = (mountTarget: HTMLElement | string): HTMLElement => {
 const DEFAULT_PROPS = Object.freeze({
   triggerEvent: "pointerdown",
   dataAttributeName: "data-popover-open",
+  closeOnEscape: true,
   computePositionOptions: {
     /**
      * Default position here is absolute, because there might be some bugs in safari with "fixed" position
@@ -222,6 +229,28 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
                 mountElement.appendChild(contentToMount);
                 onCleanup(() => contentToMount.remove());
               }
+            });
+
+            // Listen to escape key down to close popup
+            createEffect(() => {
+              let closeOnEscape = props.closeOnEscape ?? DEFAULT_PROPS.closeOnEscape;
+
+              if (!closeOnEscape) return;
+
+              const handleKeydown = (e: KeyboardEvent) => {
+                if (e.key !== "Escape") return;
+
+                // if content is not in the event path, return
+                if (e.target instanceof HTMLElement && !content.contains(e.target) && !trigger.contains(e.target))
+                  return;
+
+                // if uncontrolled, close popover
+                if (props.open === undefined) setOpen(false);
+                props.onOpenChange?.(false);
+              };
+
+              document.addEventListener("keydown", handleKeydown);
+              onCleanup(() => document.removeEventListener("keydown", handleKeydown));
             });
 
             createEffect(() => {
