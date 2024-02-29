@@ -41,7 +41,6 @@ import { flip } from "@floating-ui/dom";
   popoverAPIMountFallback="body"
   // Highly customizable
   sameWidth
-  ignoreOutsideInteraction
   dataAttributeName="data-open"
   // Astro support
   anchorElementSelector="#trigger-button"
@@ -122,10 +121,11 @@ export type PopoverProps = {
    */
   mount?: HTMLElement | string;
   /**
-   * Ignore outside interaction when popover is open
+   * Close popover on interaction outside
+   * @default true
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
    */
-  ignoreOutsideInteraction?: boolean;
+  closeOnOutsideInteraction?: boolean;
   /**
    * Data attribute name to set on trigger element
    * @default "data-popover-open"
@@ -155,6 +155,12 @@ export type PopoverProps = {
   autoUpdateOptions?: AutoUpdateOptions;
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
+  /**
+   * Close popover on escape key press.
+   * Uses 'keydown' event with 'Escape' key.
+   * @default true
+   */
+  closeOnEscape?: boolean;
   /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    * Fallback for browsers that don't support Popover API
