@@ -35,10 +35,11 @@ export type PopoverProps = {
    */
   mount?: HTMLElement | string;
   /**
-   * Ignore outside interaction when popover is open
+   * Close popover on interaction outside
+   * @default true
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
    */
-  ignoreOutsideInteraction?: boolean;
+  closeOnOutsideInteraction?: boolean;
   /**
    * Data attribute name to set on trigger element
    * @default "data-popover-open"
@@ -69,7 +70,7 @@ export type PopoverProps = {
   /** Use popover API where possible */
   usePopoverAPI?: boolean;
   /**
-   * Close dropdown on escape key press.
+   * Close popover on escape key press.
    * Uses 'keydown' event with 'Escape' key.
    * @default true
    */
@@ -112,6 +113,7 @@ const DEFAULT_PROPS = Object.freeze({
   triggerEvent: "pointerdown",
   dataAttributeName: "data-popover-open",
   closeOnEscape: true,
+  closeOnOutsideInteraction: true,
   computePositionOptions: {
     /**
      * Default position here is absolute, because there might be some bugs in safari with "fixed" position
@@ -178,7 +180,10 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
             const contentToMount = getElement(resolvedContent);
 
             createEffect(() => {
-              if (props.ignoreOutsideInteraction) return;
+              const closeOnOutsideInteraction =
+                props.closeOnOutsideInteraction ?? DEFAULT_PROPS.closeOnOutsideInteraction;
+
+              if (!closeOnOutsideInteraction) return;
 
               // Handle click outside correctly
               const handleClickOutside = (e: MouseEvent) => {
@@ -233,7 +238,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
             // Listen to escape key down to close popup
             createEffect(() => {
-              let closeOnEscape = props.closeOnEscape ?? DEFAULT_PROPS.closeOnEscape;
+              const closeOnEscape = props.closeOnEscape ?? DEFAULT_PROPS.closeOnEscape;
 
               if (!closeOnEscape) return;
 

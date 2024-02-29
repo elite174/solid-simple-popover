@@ -27,7 +27,6 @@ function App() {
         usePopoverAPI
         // When popover API is not supported, fallback to mounting content to body
         //popoverAPIMountFallback="body"
-        ignoreOutsideInteraction
         dataAttributeName="data-open"
         // SSR support
         //mount="body"
