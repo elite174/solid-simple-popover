@@ -6,13 +6,19 @@ import { flip } from "@floating-ui/dom";
 function App() {
   return (
     <div style="display: flex; align-items: center; justify-content: center; height: 100dvh;">
+      <input/>
       <Popover
         defaultOpen
         // Minimalistic
         // You'll only see <button data-open="false" id="trigger-button">Toggle popover</button> in DOM
         trigger={<button id="trigger-button">Toggle popover</button>}
         // No wrapper nodes!
-        content={<div>This div is visible when popover is open!</div>}
+        content={
+          <div>
+            <button autofocus>hi</button>
+            This div is visible when popover is open!
+          </div>
+        }
         // ------------------------------- The following props are optional
         // Full control over position
         autoUpdate
