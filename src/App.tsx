@@ -6,7 +6,6 @@ import { flip } from "@floating-ui/dom";
 function App() {
   return (
     <div style="display: flex; align-items: center; justify-content: center; height: 100dvh;">
-      <input/>
       <Popover
         defaultOpen
         // Minimalistic
