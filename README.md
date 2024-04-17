@@ -106,6 +106,11 @@ export type PopoverProps = {
   content: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
+  /**
+   * Disables listening to trigger events
+   * Note: if your trigger element has `disabled` state (like button or input), popover also won't be triggered
+   */
+  disabled?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
   /** Options for floating-ui computePosition function */
