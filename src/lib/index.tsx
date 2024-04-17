@@ -20,6 +20,11 @@ export type PopoverProps = {
   content: JSXElement;
   open?: boolean;
   defaultOpen?: boolean;
+  /**
+   * Disables listening to trigger events
+   * Note: if your trigger element has `disabled` state (like button or input), popover also won't be triggered
+   */
+  disabled?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
   /** Options for floating-ui computePosition function */
@@ -128,7 +133,10 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
   const resolvedTrigger = children(() => props.trigger);
 
-  const handleTrigger = () => {
+  const handleTrigger = (e: Event) => {
+    // don't trigger if trigger is disabled
+    if (e.target && "disabled" in e.target && e.target.disabled) return;
+
     const newOpenValue = !open();
     // if uncontrolled, set open state
     if (props.open === undefined) setOpen(newOpenValue);
@@ -150,6 +158,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
   createEffect(() => {
     const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
     if (!event) return;
+    if (props.disabled) return;
 
     const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
     trigger.addEventListener(event, handleTrigger);
