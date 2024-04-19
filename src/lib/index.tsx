@@ -165,12 +165,13 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
     events.forEach((event) => {
       const [eventName, ...modifiers] = event.split(".");
+      const modifiersSet = new Set(modifiers);
 
       trigger.addEventListener(
         eventName,
         (e: Event) => {
-          if (modifiers.includes("prevent")) e.preventDefault();
-          if (modifiers.includes("stop")) e.stopPropagation();
+          if (modifiersSet.has("prevent")) e.preventDefault();
+          if (modifiersSet.has("stop")) e.stopPropagation();
 
           // don't trigger if trigger is disabled
           if (e.target && "disabled" in e.target && e.target.disabled) return;
@@ -182,9 +183,9 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
         },
         {
           signal: abortController.signal,
-          capture: modifiers.includes("capture"),
-          passive: modifiers.includes("passive"),
-          once: modifiers.includes("once"),
+          capture: modifiersSet.has("capture"),
+          passive: modifiersSet.has("passive"),
+          once: modifiersSet.has("once"),
         }
       );
     });
