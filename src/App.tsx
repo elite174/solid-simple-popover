@@ -5,7 +5,8 @@ import { flip } from "@floating-ui/dom";
 
 function App() {
   return (
-    <div style="display: flex; align-items: center; justify-content: center; height: 100dvh;">
+    <div style="display: flex; flex-direction: column; gap: 4rem; align-items: center; justify-content: center; height: 100dvh;">
+      <div id="anchor-element">anchor</div>
       <Popover
         defaultOpen
         // Minimalistic
@@ -21,7 +22,7 @@ function App() {
         // ------------------------------- The following props are optional
         // Full control over position
         autoUpdate
-        computePositionOptions={{ placement: "bottom", middleware: [flip()] }}
+        computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
         // Popover API support (where possible)
         usePopoverAPI
         // When popover API is not supported, fallback to mounting content to body
@@ -29,8 +30,7 @@ function App() {
         dataAttributeName="data-open"
         // SSR support
         //mount="body"
-        // Astro support
-        anchorElementSelector="#trigger-button"
+        anchorElementSelector="#anchor-element"
         contentElementSelector="div"
       />
     </div>
