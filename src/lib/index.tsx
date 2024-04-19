@@ -31,10 +31,13 @@ export type PopoverProps = {
   computePositionOptions?: ComputePositionConfig;
   /**
    * @default "pointerdown"
-   * if set to null no event would trigger popover,
-   * so you need to trigger it mannually
+   * If set to null no event would trigger popover,
+   * so you need to trigger it mannually.
+   * Event name or list of event names separated by "|" which triggers popover.
+   * You may also add modifiers like "capture", "passive", "once", "prevent", "stop" to the event separated by ".":
+   * @example "pointerdown.capture.once.prevent|click"
    */
-  triggerEvent?: string | null;
+  triggerEvents?: string | null;
   /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    */
@@ -51,7 +54,7 @@ export type PopoverProps = {
    */
   dataAttributeName?: string;
   /**
-   * CSS selector to find anchor html element inside trigger
+   * CSS selector to find anchor html element
    * Can be used with Astro, because astro wraps trigger element into astro-slot
    * and position breaks
    */
@@ -72,7 +75,10 @@ export type PopoverProps = {
    * @see https://floating-ui.com/docs/autoupdate#options
    */
   autoUpdateOptions?: AutoUpdateOptions;
-  /** Use popover API where possible */
+  /**
+   * Use popover API where possible
+   * @default true
+   */
   usePopoverAPI?: boolean;
   /**
    * Close popover on escape key press.
@@ -83,6 +89,7 @@ export type PopoverProps = {
   /**
    * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
    * Fallback for browsers that don't support Popover API
+   * @default body
    */
   popoverAPIMountFallback?: HTMLElement | string;
   onOpenChange?: (open: boolean) => void;
@@ -115,10 +122,12 @@ const getMountElement = (mountTarget: HTMLElement | string): HTMLElement => {
 };
 
 const DEFAULT_PROPS = Object.freeze({
-  triggerEvent: "pointerdown",
+  triggerEvents: "pointerdown",
   dataAttributeName: "data-popover-open",
   closeOnEscape: true,
   closeOnOutsideInteraction: true,
+  usePopoverAPI: true,
+  popoverAPIMountFallback: "body",
   computePositionOptions: {
     /**
      * Default position here is absolute, because there might be some bugs in safari with "fixed" position
@@ -133,16 +142,6 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
   const resolvedTrigger = children(() => props.trigger);
 
-  const handleTrigger = (e: Event) => {
-    // don't trigger if trigger is disabled
-    if (e.target && "disabled" in e.target && e.target.disabled) return;
-
-    const newOpenValue = !open();
-    // if uncontrolled, set open state
-    if (props.open === undefined) setOpen(newOpenValue);
-    props.onOpenChange?.(newOpenValue);
-  };
-
   // sync state with props
   createComputed(
     on(
@@ -156,19 +155,47 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
   );
 
   createEffect(() => {
-    const event = props.triggerEvent === undefined ? DEFAULT_PROPS.triggerEvent : props.triggerEvent;
-    if (!event) return;
+    const events = (props.triggerEvents === undefined ? DEFAULT_PROPS.triggerEvents : props.triggerEvents)?.split("|");
+
+    if (events === undefined || events.length === 0) return;
     if (props.disabled) return;
 
-    const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
-    trigger.addEventListener(event, handleTrigger);
+    const abortController = new AbortController();
+    const trigger = getElement(resolvedTrigger);
 
-    onCleanup(() => trigger.removeEventListener(event, handleTrigger));
+    events.forEach((event) => {
+      const [eventName, ...modifiers] = event.split(".");
+      const modifiersSet = new Set(modifiers);
+
+      trigger.addEventListener(
+        eventName,
+        (e: Event) => {
+          if (modifiersSet.has("prevent")) e.preventDefault();
+          if (modifiersSet.has("stop")) e.stopPropagation();
+
+          // don't trigger if trigger is disabled
+          if (e.target && "disabled" in e.target && e.target.disabled) return;
+
+          const newOpenValue = !open();
+          // if uncontrolled, set open state
+          if (props.open === undefined) setOpen(newOpenValue);
+          props.onOpenChange?.(newOpenValue);
+        },
+        {
+          signal: abortController.signal,
+          capture: modifiersSet.has("capture"),
+          passive: modifiersSet.has("passive"),
+          once: modifiersSet.has("once"),
+        }
+      );
+    });
+
+    onCleanup(() => abortController.abort());
   });
 
   createEffect(() => {
     const dataAttributeName = props.dataAttributeName ?? DEFAULT_PROPS.dataAttributeName;
-    const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
+    const trigger = getElement(resolvedTrigger);
 
     createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
 
@@ -183,8 +210,14 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
           const resolvedContent = children(() => props.content);
 
           createEffect(() => {
-            const trigger = getElement(resolvedTrigger, props.anchorElementSelector);
+            const trigger = getElement(resolvedTrigger);
             const content = getElement(resolvedContent, props.contentElementSelector);
+            const anchorElement = props.anchorElementSelector
+              ? document.querySelector(props.anchorElementSelector)
+              : trigger;
+
+            if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");
+
             // Hack for astro
             const contentToMount = getElement(resolvedContent);
 
@@ -274,9 +307,9 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
                 // for correct placement we need to set width of content before computing position
                 // You may consider adding 'width: max-content' by yourself
                 // @see https://floating-ui.com/docs/computePosition
-                if (props.sameWidth) content.style.width = `${trigger.clientWidth}px`;
+                if (props.sameWidth) content.style.width = `${anchorElement.clientWidth}px`;
 
-                computePosition(trigger, content, options).then(({ x, y }) => {
+                computePosition(anchorElement, content, options).then(({ x, y }) => {
                   content.style.top = `${y}px`;
                   content.style.left = `${x}px`;
                   content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
@@ -288,7 +321,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
               createEffect(() => {
                 if (!props.autoUpdate) return;
 
-                const cleanupAutoupdate = autoUpdate(trigger, content, updatePosition, props.autoUpdateOptions);
+                const cleanupAutoupdate = autoUpdate(anchorElement, content, updatePosition, props.autoUpdateOptions);
 
                 onCleanup(() => cleanupAutoupdate());
               });
