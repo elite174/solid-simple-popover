@@ -34,8 +34,8 @@ export type PopoverProps = {
    * If set to null no event would trigger popover,
    * so you need to trigger it mannually.
    * Event name or list of event names separated by "|" which triggers popover.
-   * You may also add modifiers like "capture", "passive", "once" to the event separated by ".":
-   * @example "pointerdown.capture.once"
+   * You may also add modifiers like "capture", "passive", "once", "prevent", "stop" to the event separated by ".":
+   * @example "pointerdown.capture.once.prevent|click"
    */
   triggerEvents?: string | null;
   /**
@@ -169,6 +169,9 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
       trigger.addEventListener(
         eventName,
         (e: Event) => {
+          if (modifiers.includes("prevent")) e.preventDefault();
+          if (modifiers.includes("stop")) e.stopPropagation();
+
           // don't trigger if trigger is disabled
           if (e.target && "disabled" in e.target && e.target.disabled) return;
 
