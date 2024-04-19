@@ -31,9 +31,11 @@ export type PopoverProps = {
   computePositionOptions?: ComputePositionConfig;
   /**
    * @default "pointerdown"
-   * Event name or list of event names separated by "|" which triggers popover.
    * If set to null no event would trigger popover,
-   * so you need to trigger it mannually
+   * so you need to trigger it mannually.
+   * Event name or list of event names separated by "|" which triggers popover.
+   * You may also add modifiers like "capture", "passive", "once" to the event separated by ".":
+   * @example "pointerdown.capture.once"
    */
   triggerEvents?: string | null;
   /**
@@ -161,9 +163,11 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
     const abortController = new AbortController();
     const trigger = getElement(resolvedTrigger);
 
-    events.forEach((event) =>
+    events.forEach((event) => {
+      const [eventName, ...modifiers] = event.split(".");
+
       trigger.addEventListener(
-        event,
+        eventName,
         (e: Event) => {
           // don't trigger if trigger is disabled
           if (e.target && "disabled" in e.target && e.target.disabled) return;
@@ -173,9 +177,14 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
           if (props.open === undefined) setOpen(newOpenValue);
           props.onOpenChange?.(newOpenValue);
         },
-        { signal: abortController.signal }
-      )
-    );
+        {
+          signal: abortController.signal,
+          capture: modifiers.includes("capture"),
+          passive: modifiers.includes("passive"),
+          once: modifiers.includes("once"),
+        }
+      );
+    });
 
     onCleanup(() => abortController.abort());
   });
