@@ -1,3 +1,7 @@
+# 1.8.0
+
+- `anchorElementSelector` => `anchorElement`. Now you can pass HTML element or CSS selector.
+
 # 1.7.0
 
 - Popover API enabled by default with mount fallback to `body`
