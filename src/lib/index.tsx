@@ -54,11 +54,11 @@ export type PopoverProps = {
    */
   dataAttributeName?: string;
   /**
-   * CSS selector to find anchor html element
+   * HTML element or CSS selector to find anchor element which is used for positioning
    * Can be used with Astro, because astro wraps trigger element into astro-slot
    * and position breaks
    */
-  anchorElementSelector?: string;
+  anchorElement?: string | HTMLElement;
   /**
    * CSS selector to find html element inside content
    * Can be used with Astro, because astro wraps element into astro-slot
@@ -212,8 +212,10 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
           createEffect(() => {
             const trigger = getElement(resolvedTrigger);
             const content = getElement(resolvedContent, props.contentElementSelector);
-            const anchorElement = props.anchorElementSelector
-              ? document.querySelector(props.anchorElementSelector)
+            const anchorElement = props.anchorElement
+              ? typeof props.anchorElement === "string"
+                ? document.querySelector(props.anchorElement)
+                : props.anchorElement
               : trigger;
 
             if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");

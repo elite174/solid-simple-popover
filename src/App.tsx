@@ -4,9 +4,13 @@ import "./App.css";
 import { flip } from "@floating-ui/dom";
 
 function App() {
+  let anchorRef: HTMLDivElement | undefined;
+
   return (
     <div style="display: flex; flex-direction: column; gap: 4rem; align-items: center; justify-content: center; height: 100dvh;">
-      <div id="anchor-element">anchor</div>
+      <div ref={anchorRef} id="anchor-element">
+        anchor
+      </div>
       <Popover
         defaultOpen
         // Minimalistic
@@ -30,7 +34,7 @@ function App() {
         dataAttributeName="data-open"
         // SSR support
         //mount="body"
-        anchorElementSelector="#anchor-element"
+        anchorElement={anchorRef}
         contentElementSelector="div"
       />
     </div>
