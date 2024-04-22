@@ -102,7 +102,8 @@ Sometimes it's necessary the anchor element to be different from trigger element
       This div is visible when popover is open!
     </div>
   }
-  anchorElementSelector="#anchor-element"
+  // Here you can pass CSS selector or HTML element
+  anchorElement="#anchor-element"
 />
 ```
 
@@ -143,8 +144,7 @@ import { flip } from "@floating-ui/dom";
   // Highly customizable
   sameWidth
   dataAttributeName="data-open"
-  // Astro support
-  anchorElementSelector="#trigger-button"
+  anchorElement="#trigger-button"
   contentElementSelector="div"
 />;
 ```
