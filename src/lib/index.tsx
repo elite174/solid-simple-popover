@@ -11,6 +11,7 @@ import {
   createComputed,
   on,
   children,
+  mergeProps,
 } from "solid-js";
 
 export type PopoverProps = {
@@ -137,7 +138,8 @@ const DEFAULT_PROPS = Object.freeze({
   },
 }) satisfies Partial<PopoverProps>;
 
-export const Popover: VoidComponent<PopoverProps> = (props) => {
+export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
+  const props = mergeProps(DEFAULT_PROPS, initialProps);
   const [open, setOpen] = createSignal(props.open ?? props.defaultOpen ?? false);
 
   const resolvedTrigger = children(() => props.trigger);
@@ -194,7 +196,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
   });
 
   createEffect(() => {
-    const dataAttributeName = props.dataAttributeName ?? DEFAULT_PROPS.dataAttributeName;
+    const dataAttributeName = props.dataAttributeName;
     const trigger = getElement(resolvedTrigger);
 
     createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
@@ -224,10 +226,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
             const contentToMount = getElement(resolvedContent);
 
             createEffect(() => {
-              const closeOnOutsideInteraction =
-                props.closeOnOutsideInteraction ?? DEFAULT_PROPS.closeOnOutsideInteraction;
-
-              if (!closeOnOutsideInteraction) return;
+              if (!props.closeOnOutsideInteraction) return;
 
               // Handle click outside correctly
               const handleClickOutside = (e: MouseEvent) => {
@@ -282,9 +281,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
 
             // Listen to escape key down to close popup
             createEffect(() => {
-              const closeOnEscape = props.closeOnEscape ?? DEFAULT_PROPS.closeOnEscape;
-
-              if (!closeOnEscape) return;
+              if (!props.closeOnEscape) return;
 
               const handleKeydown = (e: KeyboardEvent) => {
                 if (e.key !== "Escape") return;
@@ -314,6 +311,7 @@ export const Popover: VoidComponent<PopoverProps> = (props) => {
                 computePosition(anchorElement, content, options).then(({ x, y }) => {
                   content.style.top = `${y}px`;
                   content.style.left = `${x}px`;
+                  // mergeProps doesn't merge objects
                   content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
                 });
               };

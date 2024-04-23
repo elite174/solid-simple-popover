@@ -28,7 +28,6 @@ function App() {
         autoUpdate
         computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
         // Popover API support (where possible)
-        usePopoverAPI
         // When popover API is not supported, fallback to mounting content to body
         //popoverAPIMountFallback="body"
         dataAttributeName="data-open"
