@@ -1,3 +1,8 @@
+# 1.9.0
+
+- Popover API is used by default without possibility to disable it.
+- Removed props `usePopoverAPI`, `popoverAPIMountFallback`, `mount`
+
 # 1.8.0
 
 - `anchorElementSelector` => `anchorElement`. Now you can pass HTML element or CSS selector.
