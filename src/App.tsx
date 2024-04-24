@@ -1,7 +1,8 @@
+import { flip } from "@floating-ui/dom";
+
 import { Popover } from "./lib";
 
 import "./App.css";
-import { flip } from "@floating-ui/dom";
 
 function App() {
   let anchorRef: HTMLDivElement | undefined;
@@ -27,12 +28,7 @@ function App() {
         // Full control over position
         autoUpdate
         computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
-        // Popover API support (where possible)
-        // When popover API is not supported, fallback to mounting content to body
-        //popoverAPIMountFallback="body"
         dataAttributeName="data-open"
-        // SSR support
-        //mount="body"
         anchorElement={anchorRef}
         contentElementSelector="div"
       />

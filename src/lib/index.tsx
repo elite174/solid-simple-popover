@@ -40,10 +40,6 @@ export type PopoverProps = {
    */
   triggerEvents?: string | null;
   /**
-   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-   */
-  mount?: HTMLElement | string;
-  /**
    * Close popover on interaction outside
    * @default true
    * By default when popover is open it will listen to "pointerdown" event outside of popover content and trigger
@@ -77,27 +73,13 @@ export type PopoverProps = {
    */
   autoUpdateOptions?: AutoUpdateOptions;
   /**
-   * Use popover API where possible
-   * @default true
-   */
-  usePopoverAPI?: boolean;
-  /**
    * Close popover on escape key press.
    * Uses 'keydown' event with 'Escape' key.
    * @default true
    */
   closeOnEscape?: boolean;
-  /**
-   * HTMLElement or CSS selector (can be used in SSR) to mount popover content into
-   * Fallback for browsers that don't support Popover API
-   * @default body
-   */
-  popoverAPIMountFallback?: HTMLElement | string;
   onOpenChange?: (open: boolean) => void;
 };
-
-// Remove this when Firefox supports Popover API
-const checkPopoverSupport = () => HTMLElement.prototype.hasOwnProperty("popover");
 
 const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): HTMLElement => {
   let element = childrenReturn();
@@ -112,23 +94,11 @@ const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): H
   return element;
 };
 
-const getMountElement = (mountTarget: HTMLElement | string): HTMLElement => {
-  if (mountTarget instanceof HTMLElement) return mountTarget;
-
-  const element = document.querySelector(mountTarget);
-  if (!element || !(element instanceof HTMLElement))
-    throw new Error(`Unable to find mount element with selector "${mountTarget}"`);
-
-  return element;
-};
-
 const DEFAULT_PROPS = Object.freeze({
   triggerEvents: "pointerdown",
   dataAttributeName: "data-popover-open",
   closeOnEscape: true,
   closeOnOutsideInteraction: true,
-  usePopoverAPI: true,
-  popoverAPIMountFallback: "body",
   computePositionOptions: {
     /**
      * Default position here is absolute, because there might be some bugs in safari with "fixed" position
@@ -222,9 +192,6 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
 
             if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");
 
-            // Hack for astro
-            const contentToMount = getElement(resolvedContent);
-
             createEffect(() => {
               if (!props.closeOnOutsideInteraction) return;
 
@@ -244,39 +211,15 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
             });
 
             createEffect(() => {
-              const mount = props.mount;
-              if (!mount) return;
+              const popoverId = createUniqueId();
 
-              const mountElement = getMountElement(mount);
+              trigger.setAttribute("popovertarget", popoverId);
+              content.setAttribute("popover", "manual");
+              content.setAttribute("id", `popover-${popoverId}`);
 
-              mountElement.appendChild(contentToMount);
-              onCleanup(() => contentToMount.remove());
-            });
+              if (!content.matches(":popover-open")) content.showPopover();
 
-            createEffect(() => {
-              if (!props.usePopoverAPI) return;
-
-              const isPopoverSupported = checkPopoverSupport();
-
-              if (isPopoverSupported) {
-                const popoverId = createUniqueId();
-
-                trigger.setAttribute("popovertarget", popoverId);
-                content.setAttribute("popover", "manual");
-                content.setAttribute("id", `popover-${popoverId}`);
-
-                if (!content.matches(":popover-open")) content.showPopover();
-
-                onCleanup(() => trigger.removeAttribute("popovertarget"));
-              } else {
-                const mount = props.popoverAPIMountFallback;
-                if (!mount) return;
-
-                const mountElement = getMountElement(mount);
-
-                mountElement.appendChild(contentToMount);
-                onCleanup(() => contentToMount.remove());
-              }
+              onCleanup(() => trigger.removeAttribute("popovertarget"));
             });
 
             // Listen to escape key down to close popup
