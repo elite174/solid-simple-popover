@@ -1,4 +1,10 @@
-import { autoUpdate, computePosition, type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
+import {
+  autoUpdate,
+  computePosition,
+  type ComputePositionConfig,
+  type AutoUpdateOptions,
+  type ComputePositionReturn,
+} from "@floating-ui/dom";
 import {
   type JSXElement,
   type ChildrenReturn,
@@ -79,6 +85,7 @@ export type PopoverProps = {
    */
   closeOnEscape?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onComputePosition?: (data: ComputePositionReturn) => void;
 };
 
 const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): HTMLElement => {
@@ -251,9 +258,11 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
                 // @see https://floating-ui.com/docs/computePosition
                 if (props.sameWidth) content.style.width = `${anchorElement.clientWidth}px`;
 
-                computePosition(anchorElement, content, options).then(({ x, y }) => {
-                  content.style.top = `${y}px`;
-                  content.style.left = `${x}px`;
+                computePosition(anchorElement, content, options).then((computePositionReturnData) => {
+                  props.onComputePosition?.(computePositionReturnData);
+
+                  content.style.top = `${computePositionReturnData.y}px`;
+                  content.style.left = `${computePositionReturnData.x}px`;
                   // mergeProps doesn't merge objects
                   content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
                 });

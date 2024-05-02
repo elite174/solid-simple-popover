@@ -31,6 +31,7 @@ function App() {
         dataAttributeName="data-open"
         anchorElement={anchorRef}
         contentElementSelector="div"
+        onComputePosition={console.log}
       />
     </div>
   );
