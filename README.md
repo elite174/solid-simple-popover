@@ -42,10 +42,7 @@ Don't forget to reset default browser styles for `[popover]`:
 ```
 
 ```tsx
-<Popover
-  trigger={<button>Toggle popover!</button>}
-  content={<div>Nice content here</div>}
-/>
+<Popover trigger={<button>Toggle popover!</button>} content={<div>Nice content here</div>} />
 ```
 
 ### Full control over position
@@ -142,7 +139,7 @@ import { flip } from "@floating-ui/dom";
 ## Types
 
 ```tsx
-import { type ComputePositionConfig, type AutoUpdateOptions } from "@floating-ui/dom";
+import { type ComputePositionConfig, type AutoUpdateOptions, type ComputePositionReturn } from "@floating-ui/dom";
 import { type JSXElement, type VoidComponent } from "solid-js";
 
 export type PopoverProps = {
@@ -210,6 +207,7 @@ export type PopoverProps = {
    */
   closeOnEscape?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onComputePosition?: (data: ComputePositionReturn) => void;
 };
 
 export declare const Popover: VoidComponent<PopoverProps>;

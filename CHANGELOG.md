@@ -1,3 +1,7 @@
+# 1.10.0
+
+- Added `onComputePosition` callback which receives `ComputePositionDataReturn`
+
 # 1.9.0
 
 - Popover API is used by default without possibility to disable it.
