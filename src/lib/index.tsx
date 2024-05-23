@@ -8,7 +8,6 @@ import {
 import {
   type JSXElement,
   type ChildrenReturn,
-  type VoidComponent,
   Show,
   createEffect,
   createSignal,
@@ -18,13 +17,20 @@ import {
   on,
   children,
   mergeProps,
+  type ParentComponent,
 } from "solid-js";
 
 export type PopoverProps = {
-  /** HTML Element which triggers popover */
-  trigger: JSXElement;
-  /** Content to show. Must be HTML element */
-  content: JSXElement;
+  /**
+   * HTML Element or CSS selector to find trigger element which triggers popover
+   */
+  triggerElement?: JSXElement;
+  /**
+   * HTML element or CSS selector to find anchor element which is used for positioning
+   * Can be used with Astro, because astro wraps trigger element into astro-slot
+   * and position breaks
+   */
+  anchorElement?: string | HTMLElement;
   open?: boolean;
   defaultOpen?: boolean;
   /**
@@ -57,12 +63,6 @@ export type PopoverProps = {
    */
   dataAttributeName?: string;
   /**
-   * HTML element or CSS selector to find anchor element which is used for positioning
-   * Can be used with Astro, because astro wraps trigger element into astro-slot
-   * and position breaks
-   */
-  anchorElement?: string | HTMLElement;
-  /**
    * CSS selector to find html element inside content
    * Can be used with Astro, because astro wraps element into astro-slot
    * and position breaks
@@ -88,9 +88,19 @@ export type PopoverProps = {
   onComputePosition?: (data: ComputePositionReturn) => void;
 };
 
-const getElement = (childrenReturn: ChildrenReturn, elementSelector?: string): HTMLElement => {
+const getElement = (element: JSXElement): Element | undefined | null => {
+  if (typeof element === "string") return document.querySelector(element);
+
+  if (element !== null && element !== undefined && !(element instanceof HTMLElement))
+    throw new Error("trigger must be an HTML element or null or undefined");
+
+  return element;
+};
+
+const getContentElement = (childrenReturn: ChildrenReturn, elementSelector?: string): HTMLElement => {
   let element = childrenReturn();
-  if (!(element instanceof HTMLElement)) throw new Error("trigger and content must be HTML elements");
+
+  if (!(element instanceof HTMLElement)) throw new Error("content must be HTML element");
 
   if (elementSelector) {
     element = element.matches(elementSelector) ? element : element.querySelector(elementSelector);
@@ -115,11 +125,9 @@ const DEFAULT_PROPS = Object.freeze({
   },
 }) satisfies Partial<PopoverProps>;
 
-export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
+export const Popover: ParentComponent<PopoverProps> = (initialProps) => {
   const props = mergeProps(DEFAULT_PROPS, initialProps);
   const [open, setOpen] = createSignal(props.open ?? props.defaultOpen ?? false);
-
-  const resolvedTrigger = children(() => props.trigger);
 
   // sync state with props
   createComputed(
@@ -140,7 +148,9 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
     if (props.disabled) return;
 
     const abortController = new AbortController();
-    const trigger = getElement(resolvedTrigger);
+    const trigger = getElement(props.triggerElement);
+
+    if (!(trigger instanceof HTMLElement)) return;
 
     events.forEach((event) => {
       const [eventName, ...modifiers] = event.split(".");
@@ -174,7 +184,11 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
 
   createEffect(() => {
     const dataAttributeName = props.dataAttributeName;
-    const trigger = getElement(resolvedTrigger);
+    const trigger = getElement(props.triggerElement);
+
+    // if there's no trigger no need to set an attribute
+    // Should we set it on anchor element?
+    if (!(trigger instanceof HTMLElement)) return;
 
     createEffect(() => trigger.setAttribute(dataAttributeName, String(open())));
 
@@ -182,107 +196,106 @@ export const Popover: VoidComponent<PopoverProps> = (initialProps) => {
   });
 
   return (
-    <>
-      {resolvedTrigger}
-      <Show when={open()}>
-        {(_) => {
-          const resolvedContent = children(() => props.content);
+    <Show when={open()}>
+      {(_) => {
+        const resolvedContent = children(() => props.children);
+
+        createEffect(() => {
+          const trigger = getElement(props.triggerElement);
+          const content = getContentElement(resolvedContent, props.contentElementSelector);
+          const anchorElement = props.anchorElement
+            ? typeof props.anchorElement === "string"
+              ? document.querySelector(props.anchorElement)
+              : props.anchorElement
+            : trigger;
+
+          if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");
 
           createEffect(() => {
-            const trigger = getElement(resolvedTrigger);
-            const content = getElement(resolvedContent, props.contentElementSelector);
-            const anchorElement = props.anchorElement
-              ? typeof props.anchorElement === "string"
-                ? document.querySelector(props.anchorElement)
-                : props.anchorElement
-              : trigger;
+            if (!props.closeOnOutsideInteraction) return;
+            if (!trigger) return;
 
-            if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");
+            // Handle click outside correctly
+            const handleClickOutside = (e: MouseEvent) => {
+              const eventPath = e.composedPath();
 
-            createEffect(() => {
-              if (!props.closeOnOutsideInteraction) return;
+              if (eventPath.includes(trigger) || eventPath.includes(content)) return;
 
-              // Handle click outside correctly
-              const handleClickOutside = (e: MouseEvent) => {
-                const eventPath = e.composedPath();
+              // if uncontrolled, close popover
+              if (props.open === undefined) setOpen(false);
+              props.onOpenChange?.(false);
+            };
 
-                if (eventPath.includes(trigger) || eventPath.includes(content)) return;
-
-                // if uncontrolled, close popover
-                if (props.open === undefined) setOpen(false);
-                props.onOpenChange?.(false);
-              };
-
-              document.addEventListener("pointerdown", handleClickOutside);
-              onCleanup(() => document.removeEventListener("pointerdown", handleClickOutside));
-            });
-
-            createEffect(() => {
-              const popoverId = createUniqueId();
-
-              trigger.setAttribute("popovertarget", popoverId);
-              content.setAttribute("popover", "manual");
-              content.setAttribute("id", `popover-${popoverId}`);
-
-              if (!content.matches(":popover-open")) content.showPopover();
-
-              onCleanup(() => trigger.removeAttribute("popovertarget"));
-            });
-
-            // Listen to escape key down to close popup
-            createEffect(() => {
-              if (!props.closeOnEscape) return;
-
-              const handleKeydown = (e: KeyboardEvent) => {
-                if (e.key !== "Escape") return;
-
-                // if content is not in the event path, return
-                if (e.target instanceof HTMLElement && !content.contains(e.target) && !trigger.contains(e.target))
-                  return;
-
-                // if uncontrolled, close popover
-                if (props.open === undefined) setOpen(false);
-                props.onOpenChange?.(false);
-              };
-
-              document.addEventListener("keydown", handleKeydown);
-              onCleanup(() => document.removeEventListener("keydown", handleKeydown));
-            });
-
-            createEffect(() => {
-              const options = props.computePositionOptions;
-
-              const updatePosition = () => {
-                // for correct placement we need to set width of content before computing position
-                // You may consider adding 'width: max-content' by yourself
-                // @see https://floating-ui.com/docs/computePosition
-                if (props.sameWidth) content.style.width = `${anchorElement.clientWidth}px`;
-
-                computePosition(anchorElement, content, options).then((computePositionReturnData) => {
-                  props.onComputePosition?.(computePositionReturnData);
-
-                  content.style.top = `${computePositionReturnData.y}px`;
-                  content.style.left = `${computePositionReturnData.x}px`;
-                  // mergeProps doesn't merge objects
-                  content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
-                });
-              };
-
-              updatePosition();
-
-              createEffect(() => {
-                if (!props.autoUpdate) return;
-
-                const cleanupAutoupdate = autoUpdate(anchorElement, content, updatePosition, props.autoUpdateOptions);
-
-                onCleanup(() => cleanupAutoupdate());
-              });
-            });
+            document.addEventListener("pointerdown", handleClickOutside);
+            onCleanup(() => document.removeEventListener("pointerdown", handleClickOutside));
           });
 
-          return resolvedContent();
-        }}
-      </Show>
-    </>
+          createEffect(() => {
+            if (!trigger) return;
+
+            const popoverId = createUniqueId();
+
+            trigger.setAttribute("popovertarget", popoverId);
+            content.setAttribute("popover", "manual");
+            content.setAttribute("id", `popover-${popoverId}`);
+
+            if (!content.matches(":popover-open")) content.showPopover();
+
+            onCleanup(() => trigger.removeAttribute("popovertarget"));
+          });
+
+          // Listen to escape key down to close popup
+          createEffect(() => {
+            if (!props.closeOnEscape) return;
+
+            const handleKeydown = (e: KeyboardEvent) => {
+              if (e.key !== "Escape") return;
+
+              // if content is not in the event path, return
+              if (e.target instanceof Node && (content.contains(e.target) || trigger?.contains(e.target))) return;
+
+              // if uncontrolled, close popover
+              if (props.open === undefined) setOpen(false);
+              props.onOpenChange?.(false);
+            };
+
+            document.addEventListener("keydown", handleKeydown);
+            onCleanup(() => document.removeEventListener("keydown", handleKeydown));
+          });
+
+          createEffect(() => {
+            const options = props.computePositionOptions;
+
+            const updatePosition = () => {
+              // for correct placement we need to set width of content before computing position
+              // You may consider adding 'width: max-content' by yourself
+              // @see https://floating-ui.com/docs/computePosition
+              if (props.sameWidth) content.style.width = `${anchorElement.clientWidth}px`;
+
+              computePosition(anchorElement, content, options).then((computePositionReturnData) => {
+                props.onComputePosition?.(computePositionReturnData);
+
+                content.style.top = `${computePositionReturnData.y}px`;
+                content.style.left = `${computePositionReturnData.x}px`;
+                // mergeProps doesn't merge objects
+                content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
+              });
+            };
+
+            updatePosition();
+
+            createEffect(() => {
+              if (!props.autoUpdate) return;
+
+              const cleanupAutoupdate = autoUpdate(anchorElement, content, updatePosition, props.autoUpdateOptions);
+
+              onCleanup(() => cleanupAutoupdate());
+            });
+          });
+        });
+
+        return resolvedContent();
+      }}
+    </Show>
   );
 };
