@@ -1,3 +1,17 @@
+# 2.0.0
+
+- Now triggerElement is optional. Moreover you can pass a CSS selector for a trigger element, so you have full control over
+  trigger position.
+- Popover is a ParentComponent now, so you should pass only popover content as children. Children won't be evaluated when
+  popover is closed.
+
+```tsx
+<button id="trigger">I'm a trigger</button>
+<Popover triggerElement="#trigger">
+  <div>I'm the content!</div>
+</Popover>
+```
+
 # 1.10.0
 
 - Added `onComputePosition` callback which receives `ComputePositionDataReturn`

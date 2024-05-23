@@ -1,6 +1,6 @@
 {
   "name": "solid-simple-popover",
-  "version": "1.10.0",
+  "version": "2.0.0",
   "description": "A simple popover component for SolidJS",
   "author": "Vladislav Lipatov",
   "type": "module",

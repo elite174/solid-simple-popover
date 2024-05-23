@@ -20,10 +20,13 @@ A really simple and minimalistic popover component for your apps.
 
 ### No wrapper nodes
 
-When you render the following code, only `button` (`<button data-popover-open="false">Toggle popover!</button>`) will appear in the DOM! No extra DOM nodes. Trigger node will have `data-popover-open` attribute, so you can use it in your CSS styles.
+No extra DOM nodes. Trigger node will have `data-popover-open` attribute, so you can use it in your CSS styles.
 
 ```tsx
-<Popover trigger={<button>Toggle popover!</button>} content={<div>Nice content here</div>} />
+<button id="trigger-element">Toggle popover!</button>
+<Popover triggerElement="#trigger-element">
+  <div>Nice content here</div>
+</Popover>
 ```
 
 ### Popover API support
@@ -41,10 +44,6 @@ Don't forget to reset default browser styles for `[popover]`:
 }
 ```
 
-```tsx
-<Popover trigger={<button>Toggle popover!</button>} content={<div>Nice content here</div>} />
-```
-
 ### Full control over position
 
 You can pass all the options for positioning. See docs for [computePosition](https://floating-ui.com/docs/computePosition).
@@ -52,13 +51,15 @@ You can pass all the options for positioning. See docs for [computePosition](htt
 ```tsx
 import { flip } from "@floating-ui/dom";
 
+<button id="trigger-element">Toggle popover!</button>
 <Popover
-  trigger={<button type="button">I'm a trigger</button>}
-  content={<div>I'm a content</div>}
+  triggerElement="#trigger-element"
   // Full control over position
   autoUpdate
   computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
-/>;
+>
+  <div>I'm a content</div>
+</Popover>;
 ```
 
 ### Multiple trigger events with vue-style modifiers
@@ -74,11 +75,13 @@ Events support the following modifiers:
 - `passive`
 
 ```tsx
+<button id="trigger-element">Toggle popover!</button>
 <Popover
-  trigger={<button type="button">I'm a trigger</button>}
-  content={<div>I'm a content</div>}
+  triggerElement="#trigger-element"
   triggerEvents="click.capture|pointerdown"
-/>
+>
+  <div>I'm a content</div>
+</Popover>
 ```
 
 ### Custom anchor element
@@ -86,17 +89,18 @@ Events support the following modifiers:
 Sometimes it's necessary the anchor element to be different from trigger element. You may pass optional selector to find anchor element:
 
 ```tsx
+<div id="anchor-element"></div>
+<button id="trigger-element">Toggle popover!</button>
 <Popover
-  trigger={<button id="trigger-button">Toggle popover</button>}
-  content={
-    <div>
-      <button autofocus>hi</button>
-      This div is visible when popover is open!
-    </div>
-  }
+  triggerElement="#trigger-element"
   // Here you can pass CSS selector or HTML element
   anchorElement="#anchor-element"
-/>
+>
+  <div>
+    <button autofocus>hi</button>
+    This div is visible when popover is open!
+  </div>
+</Popover>
 ```
 
 ## Installation
@@ -118,35 +122,41 @@ so you need to install required packages by yourself.
 import { Popover } from "solid-simple-popover";
 import { flip } from "@floating-ui/dom";
 
+<button id="trigger-button">Toggle popover</button>
 <Popover
-  // Minimalistic
-  // You'll only see <button data-open="false" id="trigger-button">Toggle popover</button> in DOM
-  trigger={<button id="trigger-button">Toggle popover</button>}
-  // No wrapper nodes!
-  content={<div>This div is visible when popover is open!</div>}
-  // ------------------------------- The following props are optional
+  triggerElement="trigger-button"
   // Full control over position
   autoUpdate
   computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
   // Highly customizable
   sameWidth
   dataAttributeName="data-open"
+  // You may pass custom selector here
   anchorElement="#trigger-button"
+  // Astro support
   contentElementSelector="div"
-/>;
+>
+  <div>This div is visible when popover is open!</div>
+</Popover>;
 ```
 
 ## Types
 
 ```tsx
 import { type ComputePositionConfig, type AutoUpdateOptions, type ComputePositionReturn } from "@floating-ui/dom";
-import { type JSXElement, type VoidComponent } from "solid-js";
+import { type JSXElement, type ParentComponent } from "solid-js";
 
 export type PopoverProps = {
-  /** HTML Element which triggers popover */
-  trigger: JSXElement;
-  /** Content to show. Must be HTML element */
-  content: JSXElement;
+  /**
+   * HTML Element or CSS selector to find trigger element which triggers popover
+   */
+  triggerElement?: JSXElement;
+  /**
+   * HTML element or CSS selector to find anchor element which is used for positioning
+   * Can be used with Astro, because astro wraps trigger element into astro-slot
+   * and position breaks
+   */
+  anchorElement?: string | HTMLElement;
   open?: boolean;
   defaultOpen?: boolean;
   /**
@@ -179,12 +189,6 @@ export type PopoverProps = {
    */
   dataAttributeName?: string;
   /**
-   * HTML element or CSS selector to find anchor element which is used for positioning
-   * Can be used with Astro, because astro wraps trigger element into astro-slot
-   * and position breaks
-   */
-  anchorElement?: string | HTMLElement;
-  /**
    * CSS selector to find html element inside content
    * Can be used with Astro, because astro wraps element into astro-slot
    * and position breaks
@@ -210,7 +214,7 @@ export type PopoverProps = {
   onComputePosition?: (data: ComputePositionReturn) => void;
 };
 
-export declare const Popover: VoidComponent<PopoverProps>;
+export declare const Popover: ParentComponent<PopoverProps>;
 ```
 
 ## License
