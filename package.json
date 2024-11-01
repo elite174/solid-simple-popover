@@ -43,15 +43,13 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@floating-ui/dom": "^1.5.3",
-    "solid-js": "^1.8.7",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8",
-    "vite-plugin-dts": "^3.7.0",
-    "vite-plugin-solid": "^2.8.0"
+    "solid-js": "1.9.3",
+    "typescript": "5.6.3",
+    "vite": "5.4.10",
+    "vite-plugin-dts": "4.3.0",
+    "vite-plugin-solid": "2.10.2"
   },
   "peerDependencies": {
-    "@floating-ui/dom": "^1.5",
     "solid-js": "^1.8"
   }
 }

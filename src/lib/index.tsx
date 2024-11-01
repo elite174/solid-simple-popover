@@ -1,11 +1,4 @@
 import {
-  autoUpdate,
-  computePosition,
-  type ComputePositionConfig,
-  type AutoUpdateOptions,
-  type ComputePositionReturn,
-} from "@floating-ui/dom";
-import {
   type JSXElement,
   type ChildrenReturn,
   Show,
@@ -18,7 +11,31 @@ import {
   children,
   mergeProps,
   type ParentComponent,
+  untrack,
 } from "solid-js";
+
+type ValidPositionAreaX =
+  | "left"
+  | "right"
+  | "start"
+  | "end"
+  | "center"
+  | "selft-start"
+  | "self-end"
+  | "x-start"
+  | "x-end";
+type ValidPositionAreaY =
+  | "top"
+  | "bottom"
+  | "start"
+  | "end"
+  | "center"
+  | "self-start"
+  | "self-end"
+  | "y-start"
+  | "y-end";
+
+type PositionArea = `${ValidPositionAreaY} ${ValidPositionAreaX}`;
 
 export type PopoverProps = {
   /**
@@ -40,8 +57,6 @@ export type PopoverProps = {
   disabled?: boolean;
   /** Should content have the same width as trigger */
   sameWidth?: boolean;
-  /** Options for floating-ui computePosition function */
-  computePositionOptions?: ComputePositionConfig;
   /**
    * @default "pointerdown"
    * If set to null no event would trigger popover,
@@ -69,23 +84,36 @@ export type PopoverProps = {
    */
   contentElementSelector?: string;
   /**
-   * autoUpdate option for floating ui
-   * @see https://floating-ui.com/docs/autoupdate
-   */
-  autoUpdate?: boolean;
-  /**
-   * Applies only if autoUpdate is true
-   * @see https://floating-ui.com/docs/autoupdate#options
-   */
-  autoUpdateOptions?: AutoUpdateOptions;
-  /**
    * Close popover on escape key press.
    * Uses 'keydown' event with 'Escape' key.
    * @default true
    */
   closeOnEscape?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onComputePosition?: (data: ComputePositionReturn) => void;
+  /** @default absolute */
+  targetPosition?: "absolute" | "fixed";
+  /**
+   * @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-area
+   * @default "end center"
+   */
+  targetPositionArea?:
+    | PositionArea
+    | {
+        top?: (anchorName: string) => string;
+        left?: (anchorName: string) => string;
+        right?: (anchorName: string) => string;
+        bottom?: (anchorName: string) => string;
+      };
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-visibility */
+  positionVisibility?: "always" | "anchors-visible" | "no-overflow";
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-try-fallbacks */
+  positionTryFallbacks?: (anchorName: string) => string[];
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-try-order */
+  positionTryOrder?: "normal" | "most-width" | "most-height" | "most-block-size" | "most-inline-size";
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-anchor-size */
+  targetWidth?: string;
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-anchor-size */
+  targetHeight?: string;
 };
 
 const getElement = (element: JSXElement): Element | undefined | null => {
@@ -211,6 +239,109 @@ export const Popover: ParentComponent<PopoverProps> = (initialProps) => {
 
           if (!(anchorElement instanceof HTMLElement)) throw new Error("Unable to find anchor element");
 
+          const anchorName = `--anchor-${String(Math.random()).slice(2, 6)}`;
+
+          // @ts-expect-error ts(2339)
+          anchorElement.style.anchorName = anchorName;
+          // @ts-expect-error ts(2339)
+          content.style.positionAnchor = anchorName;
+
+          createEffect(() => {
+            content.style.position = props.targetPosition ?? "absolute";
+          });
+
+          createEffect(() => {
+            if (typeof props.targetPositionArea === "string") {
+              // @ts-expect-error ts(2339)
+              content.style.positionArea = props.targetPositionArea;
+
+              onCleanup(() => {
+                // @ts-expect-error ts(2339)
+                content.style.positionArea = "";
+              });
+            } else if (typeof props.targetPositionArea === "object") {
+              if (props.targetPositionArea.top) {
+                content.style.top = props.targetPositionArea.top(anchorName);
+                onCleanup(() => {
+                  content.style.top = "";
+                });
+              }
+              if (props.targetPositionArea.left) {
+                content.style.left = props.targetPositionArea.left(anchorName);
+                onCleanup(() => {
+                  content.style.left = "";
+                });
+              }
+              if (props.targetPositionArea.right) {
+                content.style.right = props.targetPositionArea.right(anchorName);
+                onCleanup(() => {
+                  content.style.right = "";
+                });
+              }
+              if (props.targetPositionArea.bottom) {
+                content.style.bottom = props.targetPositionArea.bottom(anchorName);
+                onCleanup(() => {
+                  content.style.bottom = "";
+                });
+              }
+            } else {
+              // @ts-expect-error ts(2339)
+              content.style.positionArea = "end center";
+            }
+          });
+
+          createEffect(() => {
+            if (props.positionVisibility) {
+              // @ts-expect-error ts(2339)
+              content.style.positionVisibility = props.positionVisibility;
+
+              onCleanup(() => {
+                // @ts-expect-error ts(2339)
+                content.style.positionVisibility = "";
+              });
+            }
+          });
+
+          createEffect(() => {
+            if (props.positionTryFallbacks) {
+              // @ts-expect-error ts(2339)
+              content.style.positionTryFallbacks = untrack(() => props.positionTryFallbacks!(anchorName).join(","));
+
+              onCleanup(() => {
+                // @ts-expect-error ts(2339)
+                content.style.positionTryFallbacks = "";
+              });
+            }
+          });
+
+          createEffect(() => {
+            if (props.positionTryOrder) {
+              // @ts-expect-error ts(2339)
+              content.style.positionTryOrder = props.positionTryOrder;
+
+              onCleanup(() => {
+                // @ts-expect-error ts(2339)
+                content.style.positionTryOrder = "";
+              });
+            }
+          });
+
+          createEffect(() => {
+            if (props.targetWidth) content.style.width = props.targetWidth;
+
+            onCleanup(() => {
+              content.style.width = "";
+            });
+          });
+
+          createEffect(() => {
+            if (props.targetHeight) content.style.height = props.targetHeight;
+
+            onCleanup(() => {
+              content.style.height = "";
+            });
+          });
+
           createEffect(() => {
             if (!props.closeOnOutsideInteraction) return;
             if (!trigger) return;
@@ -261,36 +392,6 @@ export const Popover: ParentComponent<PopoverProps> = (initialProps) => {
 
             document.addEventListener("keydown", handleKeydown);
             onCleanup(() => document.removeEventListener("keydown", handleKeydown));
-          });
-
-          createEffect(() => {
-            const options = props.computePositionOptions;
-
-            const updatePosition = () => {
-              // for correct placement we need to set width of content before computing position
-              // You may consider adding 'width: max-content' by yourself
-              // @see https://floating-ui.com/docs/computePosition
-              if (props.sameWidth) content.style.width = `${anchorElement.clientWidth}px`;
-
-              computePosition(anchorElement, content, options).then((computePositionReturnData) => {
-                props.onComputePosition?.(computePositionReturnData);
-
-                content.style.top = `${computePositionReturnData.y}px`;
-                content.style.left = `${computePositionReturnData.x}px`;
-                // mergeProps doesn't merge objects
-                content.style.position = options?.strategy ?? DEFAULT_PROPS.computePositionOptions.strategy;
-              });
-            };
-
-            updatePosition();
-
-            createEffect(() => {
-              if (!props.autoUpdate) return;
-
-              const cleanupAutoupdate = autoUpdate(anchorElement, content, updatePosition, props.autoUpdateOptions);
-
-              onCleanup(() => cleanupAutoupdate());
-            });
           });
         });
 
