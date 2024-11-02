@@ -6,9 +6,9 @@ function App() {
   let anchorRef: HTMLDivElement | undefined;
 
   return (
-    <div style="display: flex; flex-direction: column; gap: 8rem; align-items: center; justify-content: center; height: 200dvh;">
+    <div style="display: flex; flex-direction: column; gap: 8rem; align-items: center; justify-content: center; height: 100dvh;">
       <div ref={anchorRef} id="anchor-element">
-        anchor asd asd
+        Test anchor
       </div>
       <button id="trigger-button">Toggle popover</button>
       <Popover
@@ -19,11 +19,10 @@ function App() {
         anchorElement={anchorRef}
         dataAttributeName="data-open"
         contentElementSelector="div"
-        targetPositionArea="bottom center"
         positionTryFallbacks={(anchorName) => [`${anchorName} flip-block`]}
         positionVisibility="anchors-visible"
       >
-        <div style={{}}>
+        <div>
           <button autofocus>hi</button>
           This div is visible when popover is open!
         </div>

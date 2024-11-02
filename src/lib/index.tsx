@@ -35,7 +35,15 @@ type ValidPositionAreaY =
   | "y-start"
   | "y-end";
 
-type PositionArea = `${ValidPositionAreaY} ${ValidPositionAreaX}`;
+export type PositionArea = `${ValidPositionAreaY} ${ValidPositionAreaX}`;
+export type TargetPositionArea =
+  | PositionArea
+  | {
+      top?: (anchorName: string) => string;
+      left?: (anchorName: string) => string;
+      right?: (anchorName: string) => string;
+      bottom?: (anchorName: string) => string;
+    };
 
 export type PopoverProps = {
   /**
@@ -55,8 +63,6 @@ export type PopoverProps = {
    * Note: if your trigger element has `disabled` state (like button or input), popover also won't be triggered
    */
   disabled?: boolean;
-  /** Should content have the same width as trigger */
-  sameWidth?: boolean;
   /**
    * @default "pointerdown"
    * If set to null no event would trigger popover,
@@ -96,14 +102,7 @@ export type PopoverProps = {
    * @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-area
    * @default "end center"
    */
-  targetPositionArea?:
-    | PositionArea
-    | {
-        top?: (anchorName: string) => string;
-        left?: (anchorName: string) => string;
-        right?: (anchorName: string) => string;
-        bottom?: (anchorName: string) => string;
-      };
+  targetPositionArea?: TargetPositionArea;
   /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-visibility */
   positionVisibility?: "always" | "anchors-visible" | "no-overflow";
   /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-try-fallbacks */
@@ -253,93 +252,58 @@ export const Popover: ParentComponent<PopoverProps> = (initialProps) => {
           createEffect(() => {
             if (typeof props.targetPositionArea === "string") {
               // @ts-expect-error ts(2339)
-              content.style.positionArea = props.targetPositionArea;
+              content.style.positionArea = props.targetPositionArea ?? "";
 
               onCleanup(() => {
                 // @ts-expect-error ts(2339)
                 content.style.positionArea = "";
               });
             } else if (typeof props.targetPositionArea === "object") {
-              if (props.targetPositionArea.top) {
-                content.style.top = props.targetPositionArea.top(anchorName);
-                onCleanup(() => {
-                  content.style.top = "";
-                });
-              }
-              if (props.targetPositionArea.left) {
-                content.style.left = props.targetPositionArea.left(anchorName);
-                onCleanup(() => {
-                  content.style.left = "";
-                });
-              }
-              if (props.targetPositionArea.right) {
-                content.style.right = props.targetPositionArea.right(anchorName);
-                onCleanup(() => {
-                  content.style.right = "";
-                });
-              }
-              if (props.targetPositionArea.bottom) {
-                content.style.bottom = props.targetPositionArea.bottom(anchorName);
-                onCleanup(() => {
-                  content.style.bottom = "";
-                });
-              }
+              const targetPositionAreaObject = props.targetPositionArea;
+
+              content.style.top = untrack(() => targetPositionAreaObject.top?.(anchorName)) ?? "";
+              content.style.left = untrack(() => targetPositionAreaObject.left?.(anchorName)) ?? "";
+              content.style.right = untrack(() => targetPositionAreaObject.right?.(anchorName)) ?? "";
+              content.style.bottom = untrack(() => targetPositionAreaObject.bottom?.(anchorName)) ?? "";
+
+              onCleanup(() => {
+                content.style.top = "";
+                content.style.left = "";
+                content.style.right = "";
+                content.style.bottom = "";
+              });
             } else {
               // @ts-expect-error ts(2339)
               content.style.positionArea = "end center";
-            }
-          });
-
-          createEffect(() => {
-            if (props.positionVisibility) {
-              // @ts-expect-error ts(2339)
-              content.style.positionVisibility = props.positionVisibility;
 
               onCleanup(() => {
                 // @ts-expect-error ts(2339)
-                content.style.positionVisibility = "";
+                content.style.positionArea = "";
               });
             }
           });
 
           createEffect(() => {
-            if (props.positionTryFallbacks) {
-              // @ts-expect-error ts(2339)
-              content.style.positionTryFallbacks = untrack(() => props.positionTryFallbacks!(anchorName).join(","));
-
-              onCleanup(() => {
-                // @ts-expect-error ts(2339)
-                content.style.positionTryFallbacks = "";
-              });
-            }
+            // @ts-expect-error ts(2339)
+            content.style.positionVisibility = props.positionVisibility ?? "";
           });
 
           createEffect(() => {
-            if (props.positionTryOrder) {
-              // @ts-expect-error ts(2339)
-              content.style.positionTryOrder = props.positionTryOrder;
-
-              onCleanup(() => {
-                // @ts-expect-error ts(2339)
-                content.style.positionTryOrder = "";
-              });
-            }
+            // @ts-expect-error ts(2339)
+            content.style.positionTryFallbacks = untrack(() => props.positionTryFallbacks!(anchorName).join(",")) ?? "";
           });
 
           createEffect(() => {
-            if (props.targetWidth) content.style.width = props.targetWidth;
-
-            onCleanup(() => {
-              content.style.width = "";
-            });
+            // @ts-expect-error ts(2339)
+            content.style.positionTryOrder = props.positionTryOrder ?? "";
           });
 
           createEffect(() => {
-            if (props.targetHeight) content.style.height = props.targetHeight;
+            content.style.width = props.targetWidth ?? "";
+          });
 
-            onCleanup(() => {
-              content.style.height = "";
-            });
+          createEffect(() => {
+            content.style.height = props.targetHeight ?? "";
           });
 
           createEffect(() => {

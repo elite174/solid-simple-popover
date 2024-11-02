@@ -8,5 +8,5 @@
 main {
   display: grid;
   place-content: center;
-  height: 120vh;
+  height: 100dvh;
 }
