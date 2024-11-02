@@ -3,17 +3,15 @@
 [![version](https://img.shields.io/npm/v/solid-simple-popover?style=for-the-badge)](https://www.npmjs.com/package/solid-simple-popover)
 ![npm](https://img.shields.io/npm/dw/solid-simple-popover?style=for-the-badge)
 
-A really simple and minimalistic popover component for your apps.
+A really simple and minimalistic popover component for your apps with CSS anchor position support.
 
-**IMPORTANT:**
-
-- You may add `width: max-content` to the content element by yourself to avoid layout interference as it described [here](https://floating-ui.com/docs/computeposition#initial-layout).
+**V2 docs are [here](https://github.com/elite174/solid-simple-popover/tree/v2)**
 
 ## Features
 
 - Minimalistic - no wrapper DOM nodes!
 - Popover API support
-- Full control over position
+- Full control over position (CSS Anchor positioning)
 - Works with SSR and Astro
 - Multiple trigger events with vue-style modifiers
 - Custom anchor element
@@ -49,14 +47,11 @@ Don't forget to reset default browser styles for `[popover]`:
 You can pass all the options for positioning. See docs for [computePosition](https://floating-ui.com/docs/computePosition).
 
 ```tsx
-import { flip } from "@floating-ui/dom";
-
 <button id="trigger-element">Toggle popover!</button>
 <Popover
   triggerElement="#trigger-element"
   // Full control over position
-  autoUpdate
-  computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
+  targetPositionArea="top center"
 >
   <div>I'm a content</div>
 </Popover>;
@@ -108,28 +103,21 @@ Sometimes it's necessary the anchor element to be different from trigger element
 This package has the following peer dependencies:
 
 ```json
-"@floating-ui/dom": "^1.5",
 "solid-js": "^1.8"
 ```
 
 so you need to install required packages by yourself.
 
-`pnpm i solid-js @floating-ui/dom solid-simple-popover`
+`pnpm i solid-js solid-simple-popover`
 
 ## Usage
 
 ```tsx
 import { Popover } from "solid-simple-popover";
-import { flip } from "@floating-ui/dom";
 
 <button id="trigger-button">Toggle popover</button>
 <Popover
   triggerElement="trigger-button"
-  // Full control over position
-  autoUpdate
-  computePositionOptions={{ placement: "bottom-start", middleware: [flip()] }}
-  // Highly customizable
-  sameWidth
   dataAttributeName="data-open"
   // You may pass custom selector here
   anchorElement="#trigger-button"
@@ -143,9 +131,36 @@ import { flip } from "@floating-ui/dom";
 ## Types
 
 ```tsx
-import { type ComputePositionConfig, type AutoUpdateOptions, type ComputePositionReturn } from "@floating-ui/dom";
-import { type JSXElement, type ParentComponent } from "solid-js";
-
+import { JSXElement, ParentComponent } from "solid-js";
+type ValidPositionAreaX =
+  | "left"
+  | "right"
+  | "start"
+  | "end"
+  | "center"
+  | "selft-start"
+  | "self-end"
+  | "x-start"
+  | "x-end";
+type ValidPositionAreaY =
+  | "top"
+  | "bottom"
+  | "start"
+  | "end"
+  | "center"
+  | "self-start"
+  | "self-end"
+  | "y-start"
+  | "y-end";
+export type PositionArea = `${ValidPositionAreaY} ${ValidPositionAreaX}`;
+export type TargetPositionArea =
+  | PositionArea
+  | {
+      top?: (anchorName: string) => string;
+      left?: (anchorName: string) => string;
+      right?: (anchorName: string) => string;
+      bottom?: (anchorName: string) => string;
+    };
 export type PopoverProps = {
   /**
    * HTML Element or CSS selector to find trigger element which triggers popover
@@ -164,10 +179,6 @@ export type PopoverProps = {
    * Note: if your trigger element has `disabled` state (like button or input), popover also won't be triggered
    */
   disabled?: boolean;
-  /** Should content have the same width as trigger */
-  sameWidth?: boolean;
-  /** Options for floating-ui computePosition function */
-  computePositionOptions?: ComputePositionConfig;
   /**
    * @default "pointerdown"
    * If set to null no event would trigger popover,
@@ -195,25 +206,30 @@ export type PopoverProps = {
    */
   contentElementSelector?: string;
   /**
-   * autoUpdate option for floating ui
-   * @see https://floating-ui.com/docs/autoupdate
-   */
-  autoUpdate?: boolean;
-  /**
-   * Applies only if autoUpdate is true
-   * @see https://floating-ui.com/docs/autoupdate#options
-   */
-  autoUpdateOptions?: AutoUpdateOptions;
-  /**
    * Close popover on escape key press.
    * Uses 'keydown' event with 'Escape' key.
    * @default true
    */
   closeOnEscape?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onComputePosition?: (data: ComputePositionReturn) => void;
+  /** @default absolute */
+  targetPosition?: "absolute" | "fixed";
+  /**
+   * @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-area
+   * @default "end center"
+   */
+  targetPositionArea?: TargetPositionArea;
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-visibility */
+  positionVisibility?: "always" | "anchors-visible" | "no-overflow";
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-try-fallbacks */
+  positionTryFallbacks?: (anchorName: string) => string[];
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-position-try-order */
+  positionTryOrder?: "normal" | "most-width" | "most-height" | "most-block-size" | "most-inline-size";
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-anchor-size */
+  targetWidth?: string;
+  /** @see https://css-tricks.com/css-anchor-positioning-guide/#aa-anchor-size */
+  targetHeight?: string;
 };
-
 export declare const Popover: ParentComponent<PopoverProps>;
 ```
 

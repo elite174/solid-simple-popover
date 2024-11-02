@@ -1,3 +1,7 @@
+# 3.0.0
+
+- Dropped floating UI. Used CSS anchor positioning API. See updated types in README.
+
 # 2.0.0
 
 - Now triggerElement is optional. Moreover you can pass a CSS selector for a trigger element, so you have full control over
