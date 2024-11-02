@@ -5,6 +5,8 @@
 
 A really simple and minimalistic popover component for your apps with CSS anchor position support.
 
+**Warning:** CSS anchor positioninig is not supported [everywhere](https://caniuse.com/css-anchor-positioning), so use the version **v3.0** carefully. Use **v2.0** if wide support needed (with floating ui).
+
 **V2 docs are [here](https://github.com/elite174/solid-simple-popover/tree/v2)**
 
 ## Features
